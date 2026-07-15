@@ -1,0 +1,8 @@
+"""add invoices"""
+from alembic import op
+import sqlalchemy as sa
+revision='0005_invoices';down_revision='0004_receivables';branch_labels=None;depends_on=None
+def upgrade():
+ op.create_table('invoices',sa.Column('id',sa.Uuid(),primary_key=True),sa.Column('user_id',sa.Uuid(),sa.ForeignKey('users.id'),nullable=False),sa.Column('shift_id',sa.Uuid(),sa.ForeignKey('shifts.id'),nullable=False),sa.Column('contractor_id',sa.Uuid(),sa.ForeignKey('contractors.id'),nullable=False),sa.Column('number',sa.String(60),nullable=False),sa.Column('series',sa.String(30)),sa.Column('verification_code',sa.String(100)),sa.Column('municipality',sa.String(100)),sa.Column('provider',sa.String(160)),sa.Column('customer',sa.String(160)),sa.Column('issue_date',sa.Date()),sa.Column('competence',sa.Date(),nullable=False),sa.Column('service_value',sa.Numeric(12,2),nullable=False),sa.Column('net_value',sa.Numeric(12,2)),sa.Column('rate',sa.Numeric(6,3)),sa.Column('iss',sa.Numeric(12,2)),sa.Column('ir',sa.Numeric(12,2)),sa.Column('pis',sa.Numeric(12,2)),sa.Column('cofins',sa.Numeric(12,2)),sa.Column('csll',sa.Numeric(12,2)),sa.Column('inss',sa.Numeric(12,2)),sa.Column('status',sa.String(30),nullable=False),sa.Column('pdf_url',sa.String(500)),sa.Column('xml_url',sa.String(500)),sa.Column('notes',sa.Text()),sa.Column('created_at',sa.DateTime(timezone=True),server_default=sa.func.now()),sa.Column('updated_at',sa.DateTime(timezone=True),server_default=sa.func.now()),sa.Column('deleted_at',sa.DateTime(timezone=True)))
+ for n,c in [('ix_invoices_user_id','user_id'),('ix_invoices_shift_id','shift_id')]:op.create_index(n,'invoices',[c])
+def downgrade():op.drop_table('invoices')

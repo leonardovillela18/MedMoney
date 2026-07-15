@@ -6,6 +6,8 @@ from app.database.session import Base
 from app.models.user import User, RefreshToken
 from app.models.contractor import Contractor
 from app.models.shift import Shift
+from app.models.receivable import Receivable
+from app.models.invoice import Invoice
 config=context.config
 if config.config_file_name: fileConfig(config.config_file_name)
 config.set_main_option('sqlalchemy.url',get_settings().database_url)
