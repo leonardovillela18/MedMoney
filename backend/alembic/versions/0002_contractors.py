@@ -1,0 +1,8 @@
+"""add contractors"""
+from alembic import op
+import sqlalchemy as sa
+revision='0002_contractors';down_revision='0001_initial';branch_labels=None;depends_on=None
+def upgrade():
+    op.create_table('contractors',sa.Column('id',sa.Uuid(),primary_key=True),sa.Column('user_id',sa.Uuid(),sa.ForeignKey('users.id'),nullable=False),sa.Column('name',sa.String(160),nullable=False),sa.Column('type',sa.String(40),nullable=False),sa.Column('cnpj',sa.String(18)),sa.Column('email',sa.String(255)),sa.Column('phone',sa.String(30)),sa.Column('mobile',sa.String(30)),sa.Column('site',sa.String(255)),sa.Column('zip_code',sa.String(9)),sa.Column('street',sa.String(180)),sa.Column('number',sa.String(20)),sa.Column('neighborhood',sa.String(100)),sa.Column('city',sa.String(100)),sa.Column('state',sa.String(2)),sa.Column('complement',sa.String(120)),sa.Column('primary_contact',sa.String(120)),sa.Column('contact_role',sa.String(100)),sa.Column('contact_phone',sa.String(30)),sa.Column('contact_email',sa.String(255)),sa.Column('payment_day',sa.String(40)),sa.Column('payment_term_days',sa.Integer()),sa.Column('notes',sa.Text()),sa.Column('active',sa.Boolean(),server_default=sa.true(),nullable=False),sa.Column('created_at',sa.DateTime(timezone=True),server_default=sa.func.now()),sa.Column('updated_at',sa.DateTime(timezone=True),server_default=sa.func.now()),sa.Column('deleted_at',sa.DateTime(timezone=True)))
+    op.create_index('ix_contractors_user_id','contractors',['user_id']);op.create_index('ix_contractors_name','contractors',['name']);op.create_index('ix_contractors_type','contractors',['type']);op.create_index('ix_contractors_city','contractors',['city'])
+def downgrade():op.drop_table('contractors')
