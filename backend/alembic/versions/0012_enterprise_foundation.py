@@ -3,8 +3,11 @@ from alembic import op
 import sqlalchemy as sa
 revision='0012_enterprise_foundation';down_revision='0011_alerts';branch_labels=None;depends_on=None
 def upgrade():
+ bind=op.get_bind()
  for name,size in [('ip_address',64),('user_agent',500),('session_name',120)]:op.add_column('refresh_tokens',sa.Column(name,sa.String(size)))
- op.add_column('refresh_tokens',sa.Column('last_used_at',sa.DateTime(timezone=True)));op.add_column('refresh_tokens',sa.Column('rotated_from_id',sa.Uuid(),sa.ForeignKey('refresh_tokens.id')));op.create_index('ix_refresh_tokens_user_active','refresh_tokens',['user_id','revoked_at','expires_at'])
+ op.add_column('refresh_tokens',sa.Column('last_used_at',sa.DateTime(timezone=True)))
+ rotated_column=sa.Column('rotated_from_id',sa.Uuid()) if bind.dialect.name=='sqlite' else sa.Column('rotated_from_id',sa.Uuid(),sa.ForeignKey('refresh_tokens.id'))
+ op.add_column('refresh_tokens',rotated_column);op.create_index('ix_refresh_tokens_user_active','refresh_tokens',['user_id','revoked_at','expires_at'])
  op.create_table('roles',sa.Column('id',sa.Uuid(),primary_key=True),sa.Column('name',sa.String(40),nullable=False,unique=True),sa.Column('description',sa.String(200)));op.create_index('ix_roles_name','roles',['name'],unique=True)
  op.create_table('permissions',sa.Column('id',sa.Uuid(),primary_key=True),sa.Column('name',sa.String(80),nullable=False,unique=True),sa.Column('description',sa.String(200)));op.create_index('ix_permissions_name','permissions',['name'],unique=True)
  op.create_table('user_roles',sa.Column('id',sa.Uuid(),primary_key=True),sa.Column('user_id',sa.Uuid(),sa.ForeignKey('users.id'),nullable=False),sa.Column('role_id',sa.Uuid(),sa.ForeignKey('roles.id'),nullable=False),sa.UniqueConstraint('user_id','role_id',name='uq_user_role'));op.create_index('ix_user_roles_user_id','user_roles',['user_id']);op.create_index('ix_user_roles_role_id','user_roles',['role_id'])
@@ -23,7 +26,7 @@ def upgrade():
  op.bulk_insert(permissions,[{'id':value,'name':name,'description':name.replace('.',' ').title()} for name,value in permission_ids.items()])
  grants={'USER':('finance.read','finance.write','reports.read'),'FINANCEIRO':('finance.read','finance.write','reports.read'),'CONTADOR':('finance.read','reports.read'),'ASSISTENTE':('finance.read','finance.write'),'ADMIN':permission_names}
  op.bulk_insert(role_permissions,[{'id':uuid.uuid4(),'role_id':role_ids[role],'permission_id':permission_ids[permission]} for role,names in grants.items() for permission in names])
- existing_users=op.get_bind().execute(sa.text('SELECT id FROM users')).fetchall()
+ existing_users=bind.execute(sa.text('SELECT id FROM users')).fetchall()
  if existing_users:op.bulk_insert(user_roles,[{'id':uuid.uuid4(),'user_id':row[0],'role_id':role_ids['USER']} for row in existing_users])
 def downgrade():
  op.drop_table('audit_logs');op.drop_table('role_permissions');op.drop_table('user_roles');op.drop_table('permissions');op.drop_table('roles');op.drop_index('ix_refresh_tokens_user_active',table_name='refresh_tokens')

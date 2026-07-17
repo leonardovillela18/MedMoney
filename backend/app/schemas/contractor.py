@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Literal
+import uuid
 from pydantic import BaseModel, EmailStr, Field, field_validator
 import re
 ContractorType=Literal['Hospital','Clínica','UPA','Santa Casa','Consultório','Prefeitura','Cooperativa','Empresa','Plano de Saúde','Outro']
