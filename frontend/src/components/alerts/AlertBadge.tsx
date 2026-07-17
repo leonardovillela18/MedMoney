@@ -1,0 +1,1 @@
+export function AlertBadge({count}:{count:number}){return count>0?<span className="grid min-w-5 place-items-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">{count>99?'99+':count}</span>:null}

@@ -18,3 +18,4 @@ class RefreshToken(TimestampMixin,Base):
     id: Mapped[uuid.UUID]=mapped_column(primary_key=True,default=uuid.uuid4)
     token_hash: Mapped[str]=mapped_column(String(64),unique=True,index=True); expires_at: Mapped[datetime]=mapped_column(DateTime(timezone=True)); revoked_at: Mapped[datetime|None]=mapped_column(DateTime(timezone=True),nullable=True)
     user_id: Mapped[uuid.UUID]=mapped_column(ForeignKey('users.id'),index=True); user: Mapped[User]=relationship(back_populates='refresh_tokens')
+    ip_address: Mapped[str|None]=mapped_column(String(64)); user_agent: Mapped[str|None]=mapped_column(String(500)); session_name: Mapped[str|None]=mapped_column(String(120)); last_used_at: Mapped[datetime|None]=mapped_column(DateTime(timezone=True)); rotated_from_id: Mapped[uuid.UUID|None]=mapped_column(ForeignKey('refresh_tokens.id'))

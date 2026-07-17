@@ -22,5 +22,11 @@ class ReceivableService:
   if x.status in ('Cancelado','Recebido'):raise HTTPException(422,'Este recebimento não pode receber pagamentos.')
   if data['value']>x.remaining_balance:raise HTTPException(422,'O valor é maior que o saldo restante.')
   if data['date']<x.expected_date.replace(year=x.expected_date.year) and data['date']>date.today():raise HTTPException(422,'Data de recebimento inválida.')
-  x.received_value+=data['value'];x.remaining_balance-=data['value'];x.received_date=data['date'];x.receipt_method=data['method'];x.notes=data.get('notes') or x.notes;x.receipt_url=data.get('receipt_url') or x.receipt_url;x.status='Recebido' if x.remaining_balance==0 else 'Recebido Parcialmente';self.db.commit();self.db.refresh(x);return x
+  x.received_value+=data['value'];x.remaining_balance-=data['value'];x.received_date=data['date'];x.receipt_method=data['method'];x.notes=data.get('notes') or x.notes;x.receipt_url=data.get('receipt_url') or x.receipt_url;x.status='Recebido' if x.remaining_balance==0 else 'Recebido Parcialmente';self.db.commit();self.db.refresh(x)
+  from app.services.tax_service import TaxService
+  TaxService(self.db).sync(user,x.received_value,x.received_date,shift_id=x.shift_id,receivable_id=x.id)
+  from app.services.cashflow_service import CashflowService
+  cashflow=CashflowService(self.db);cashflow.sync_source(user,'Plantão',x.shift_id,x.received_date,'Receita Recebida','Recebimento de plantão','Recebimentos',x.received_value,'Confirmado');self.db.commit();cashflow.recalculate(user)
+  from app.services.insights.events import refresh_insights
+  refresh_insights(self.db,user);return x
  def delete(self,user,id):x=self.get(user,id);x.deleted_at=datetime.now(timezone.utc);self.db.commit()

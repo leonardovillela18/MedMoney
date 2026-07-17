@@ -1,0 +1,10 @@
+"""add intelligent financial goals"""
+from alembic import op
+import sqlalchemy as sa
+revision='0010_financial_goals';down_revision='0009_financial_insights';branch_labels=None;depends_on=None
+def upgrade():
+ op.create_table('financial_goals',sa.Column('id',sa.Uuid(),primary_key=True),sa.Column('user_id',sa.Uuid(),sa.ForeignKey('users.id'),nullable=False),sa.Column('titulo',sa.String(160),nullable=False),sa.Column('descricao',sa.Text()),sa.Column('tipo',sa.String(40),nullable=False),sa.Column('valor_meta',sa.Numeric(14,2),nullable=False),sa.Column('valor_atual',sa.Numeric(14,2),nullable=False,server_default='0'),sa.Column('percentual',sa.Numeric(7,2),nullable=False,server_default='0'),sa.Column('data_inicio',sa.Date(),nullable=False),sa.Column('data_final',sa.Date(),nullable=False),sa.Column('status',sa.String(20),nullable=False),sa.Column('cor',sa.String(20),nullable=False),sa.Column('icone',sa.String(40),nullable=False),sa.Column('created_at',sa.DateTime(timezone=True),server_default=sa.func.now()),sa.Column('updated_at',sa.DateTime(timezone=True),server_default=sa.func.now()),sa.Column('deleted_at',sa.DateTime(timezone=True)))
+ for c in ('user_id','tipo','data_inicio','data_final','status'):op.create_index(f'ix_financial_goals_{c}','financial_goals',[c])
+ op.create_table('financial_goal_snapshots',sa.Column('id',sa.Uuid(),primary_key=True),sa.Column('goal_id',sa.Uuid(),sa.ForeignKey('financial_goals.id'),nullable=False),sa.Column('user_id',sa.Uuid(),sa.ForeignKey('users.id'),nullable=False),sa.Column('data',sa.Date(),nullable=False),sa.Column('valor',sa.Numeric(14,2),nullable=False),sa.Column('percentual',sa.Numeric(7,2),nullable=False),sa.Column('created_at',sa.DateTime(timezone=True),server_default=sa.func.now()),sa.UniqueConstraint('goal_id','data',name='uq_goal_snapshot_day'))
+ for c in ('goal_id','user_id','data'):op.create_index(f'ix_financial_goal_snapshots_{c}','financial_goal_snapshots',[c])
+def downgrade():op.drop_table('financial_goal_snapshots');op.drop_table('financial_goals')

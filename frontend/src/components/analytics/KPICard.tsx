@@ -1,0 +1,1 @@
+export function KPICard({label,value}:{label:string;value:string}){return <div className="rounded-xl border bg-white p-4"><p className="text-xs text-slate-400">{label}</p><p className="mt-2 text-lg font-semibold">{value}</p></div>}

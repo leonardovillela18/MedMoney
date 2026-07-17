@@ -9,6 +9,10 @@ class RegisterRequest(BaseModel):
         return v
 class LoginRequest(BaseModel): email:EmailStr; password:str=Field(min_length=1,max_length=128)
 class TokenResponse(BaseModel): access_token:str; refresh_token:str; token_type:str='bearer'
+class RefreshRequest(BaseModel): refresh_token:str=Field(min_length=20,max_length=500)
+class LogoutRequest(RefreshRequest): pass
+class SessionResponse(BaseModel):
+    id:str; ip_address:str|None; user_agent:str|None; session_name:str|None; last_used_at:str|None; expires_at:str; current:bool=False
 class UserResponse(BaseModel):
     id:str; name:str; email:EmailStr; crm:str; crm_uf:str; specialty:str; city:str; state:str
     model_config={'from_attributes':True}

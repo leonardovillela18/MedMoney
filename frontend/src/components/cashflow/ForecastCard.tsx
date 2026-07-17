@@ -1,0 +1,1 @@
+export function ForecastCard({days,balance,format}:{days:number;balance:number;format:(n:number)=>string}){return <article className="card min-w-36 flex-1 p-4"><p className="text-xs font-medium uppercase tracking-wide text-slate-400">Próximos {days} dias</p><p className={`mt-2 text-lg font-bold ${balance<0?'text-red-600':'text-slate-900'}`}>{format(balance)}</p></article>}

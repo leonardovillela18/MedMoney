@@ -1,0 +1,8 @@
+services:
+  backend:
+    restart: unless-stopped
+    environment: {ENVIRONMENT: production, ENABLE_DOCS: "false", LOG_LEVEL: INFO}
+    deploy: {resources: {limits: {cpus: "2", memory: 1G}}}
+  frontend: {restart: unless-stopped}
+  db: {restart: unless-stopped}
+  redis: {restart: unless-stopped}

@@ -23,11 +23,19 @@ def get_invoice(id:uuid.UUID,user:User=Depends(current_user),db:Session=Depends(
 def create_invoice(data:InvoiceInput,user:User=Depends(current_user),db:Session=Depends(get_db)):
  shift=db.scalar(select(Shift).where(Shift.id==data.shift_id,Shift.user_id==user.id,Shift.deleted_at.is_(None)))
  if not shift:raise HTTPException(422,'Plantão inválido.')
- x=Invoice(user_id=user.id,**data.model_dump());db.add(x);db.commit();db.refresh(x);return x
+ x=Invoice(user_id=user.id,**data.model_dump());db.add(x);db.commit();db.refresh(x)
+ from app.services.tax_service import TaxService
+ TaxService(db).sync(user.id,x.service_value,x.competence,shift_id=x.shift_id,invoice_id=x.id)
+ from app.services.insights.events import refresh_insights
+ refresh_insights(db,user.id);return x
 @router.put('/{id}',response_model=InvoiceResponse)
 def update_invoice(id:uuid.UUID,data:InvoiceInput,user:User=Depends(current_user),db:Session=Depends(get_db)):
  x=owned(db,user.id,id)
  for k,v in data.model_dump().items():setattr(x,k,v)
- db.commit();db.refresh(x);return x
+ db.commit();db.refresh(x)
+ from app.services.tax_service import TaxService
+ TaxService(db).sync(user.id,x.service_value,x.competence,shift_id=x.shift_id,invoice_id=x.id)
+ from app.services.insights.events import refresh_insights
+ refresh_insights(db,user.id);return x
 @router.delete('/{id}',status_code=204)
 def delete_invoice(id:uuid.UUID,user:User=Depends(current_user),db:Session=Depends(get_db)):x=owned(db,user.id,id);x.deleted_at=datetime.now(timezone.utc);db.commit();return Response(status_code=204)

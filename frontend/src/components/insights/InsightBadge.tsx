@@ -1,0 +1,1 @@
+import type { Insight } from '@/types/insight';export function InsightBadge({severity}:{severity:Insight['severidade']}){const c={Informativo:'bg-blue-50 text-blue-700',Atenção:'bg-amber-50 text-amber-700',Crítico:'bg-red-50 text-red-700'};return <span className={`rounded-full px-2 py-1 text-xs font-medium ${c[severity]}`}>{severity}</span>}

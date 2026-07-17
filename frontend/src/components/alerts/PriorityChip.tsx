@@ -1,0 +1,1 @@
+import type { AlertItem } from '@/types/alert';export function PriorityChip({priority}:{priority:AlertItem['prioridade']}){const c={Baixa:'bg-slate-100 text-slate-600',Média:'bg-blue-50 text-blue-700',Alta:'bg-amber-50 text-amber-700',Crítica:'bg-red-50 text-red-700'};return <span className={`rounded-full px-2 py-1 text-xs font-medium ${c[priority]}`}>{priority}</span>}

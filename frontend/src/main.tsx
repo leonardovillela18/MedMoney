@@ -1,8 +1,2 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { BrowserRouter } from 'react-router-dom'
-import { AuthProvider } from '@/context/AuthContext'
-import { App } from '@/routes/App'
-import '@/index.css'
-createRoot(document.getElementById('root')!).render(<StrictMode><QueryClientProvider client={new QueryClient()}><BrowserRouter><AuthProvider><App /></AuthProvider></BrowserRouter></QueryClientProvider></StrictMode>)
+import { StrictMode } from 'react';import { createRoot } from 'react-dom/client';import { QueryClient,QueryClientProvider } from '@tanstack/react-query';import { BrowserRouter } from 'react-router-dom';import { AuthProvider } from '@/context/AuthContext';import { App } from '@/routes/App';import { AppErrorBoundary } from '@/components/common/AppErrorBoundary';import { NetworkStatus } from '@/components/common/NetworkStatus';import '@/index.css'
+const queryClient=new QueryClient({defaultOptions:{queries:{retry:2,refetchOnReconnect:true,refetchOnWindowFocus:false,staleTime:30_000},mutations:{retry:0}}});createRoot(document.getElementById('root')!).render(<StrictMode><AppErrorBoundary><QueryClientProvider client={queryClient}><NetworkStatus/><BrowserRouter><AuthProvider><App/></AuthProvider></BrowserRouter></QueryClientProvider></AppErrorBoundary></StrictMode>)

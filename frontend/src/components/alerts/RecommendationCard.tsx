@@ -1,0 +1,1 @@
+import { Link } from 'react-router-dom';export function RecommendationCard({action,url}:{action:string;url:string}){return <Link className="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-blue-900 transition hover:bg-blue-100" to={url}><span>{action}</span><span>→</span></Link>}
