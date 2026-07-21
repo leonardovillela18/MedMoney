@@ -1,0 +1,2 @@
+import { api } from './api';import type { AdminUser,AdminUserPayload } from '@/types/adminUser'
+export const adminUsersService={list:()=>api.get<AdminUser[]>('/admin/users').then(r=>r.data),get:(id:string)=>api.get<AdminUser>(`/admin/users/${id}`).then(r=>r.data),create:(data:AdminUserPayload)=>api.post<AdminUser>('/admin/users',data).then(r=>r.data),update:(id:string,data:AdminUserPayload)=>api.put<AdminUser>(`/admin/users/${id}`,data).then(r=>r.data)}

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import timedelta
+from datetime import datetime,timedelta
 from decimal import Decimal
 from app.services.alerts.base import AlertCandidate as A
 def alert(tipo,categoria,titulo,descricao,prioridade,acao,url,origem,reference):return A(tipo,categoria,titulo,descricao,prioridade,acao,url,origem,reference)
@@ -23,6 +23,10 @@ class ShiftRule:
  def evaluate(self,c):
   rows=[]
   for x in c.shifts:
+   event_at=datetime.combine(x.date,x.start_time);hours=(event_at-datetime.now()).total_seconds()/3600
+   if x.status=='Agendado' and 0<=hours<=48:
+    surgery=x.type=='Cirurgia';kind='Cirurgia' if surgery else 'Plantão';url=f'/cirurgias/{x.id}' if surgery else f'/plantoes/{x.id}'
+    rows.append(alert(f'{kind} nas próximas 48 horas','Agenda',f'{x.title or kind} está próximo',f'{kind} agendado para {x.date.strftime("%d/%m/%Y")} às {x.start_time.strftime("%H:%M")}.','Alta',f'Ver {kind.lower()}',url,kind,f'upcoming-event:{x.id}'))
    if not x.expected_payment_date:rows.append(alert('Plantão sem previsão de pagamento','Plantões',f'{x.title or x.type} sem previsão de pagamento',f'O plantão de R$ {x.gross_value:,.2f} não possui data esperada.','Média','Informar previsão de pagamento',f'/plantoes/{x.id}/editar','Plantão',f'shift-no-payment:{x.id}'))
    if not x.contractor_id:rows.append(alert('Plantão sem contratante','Plantões','Plantão sem contratante',f'O plantão de {x.date} precisa de contratante.','Alta','Atualizar plantão',f'/plantoes/{x.id}/editar','Plantão',f'shift-no-contractor:{x.id}'))
    if x.gross_value<=0:rows.append(alert('Plantão sem valor','Plantões','Plantão sem valor financeiro',f'O plantão de {x.date} não possui valor válido.','Alta','Atualizar valor do plantão',f'/plantoes/{x.id}/editar','Plantão',f'shift-no-value:{x.id}'))

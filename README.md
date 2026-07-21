@@ -1,12 +1,24 @@
-# MedMoney
+# MedFinance
 
 Plataforma financeira para médicos PJ, com módulos de agenda, recebíveis, despesas, impostos, fluxo de caixa, metas, alertas e inteligência financeira.
 
 ## Execução local
 
-1. Copie `backend/.env.example` para `backend/.env` e ajuste os valores.
-2. Execute `docker compose up --build`.
-3. Acesse o frontend em `http://localhost:8082` e a API em `http://localhost:8000/docs`.
+No PowerShell, execute a partir da raiz do projeto:
+
+```powershell
+.\scripts\iniciar.ps1
+```
+
+O comando inicia os contêineres em segundo plano. Acesse o frontend em `http://localhost:8082` e a API em `http://localhost:8000/docs`.
+
+Use `.\scripts\iniciar.ps1 -Build` somente no primeiro uso ou após alterar dependências/Dockerfiles. Para encerrar:
+
+```powershell
+.\scripts\parar.ps1
+```
+
+Se o PowerShell bloquear scripts locais, use diretamente `docker compose up -d` para iniciar e `docker compose down` para parar.
 
 Para desenvolvimento sem contêineres, consulte `backend/README.md` e `frontend/README.md`.
 

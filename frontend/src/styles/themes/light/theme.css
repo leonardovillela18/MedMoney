@@ -1,0 +1,10 @@
+html[data-theme='light'] {
+  color-scheme: light;
+  --app-bg: #edf1f5;
+  --surface: #fbfcfd;
+  --surface-muted: #f1f5f9;
+  --theme-border: #dbe3ec;
+  --theme-text: #1e293b;
+  --theme-muted: #64748b;
+  --theme-accent: #2563eb;
+}

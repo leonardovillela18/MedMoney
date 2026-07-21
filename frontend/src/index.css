@@ -1,4 +1,12 @@
 @tailwind base; @tailwind components; @tailwind utilities;
-@layer base { * { @apply border-slate-200; } body { @apply bg-slate-50 font-sans text-slate-800 antialiased; } }
+@layer base { :root { --app-bg: #edf1f5; --surface: #fbfcfd; } :root[data-font-size='large'] { font-size: 17px; } * { @apply border-slate-200; } body { background: var(--app-bg); @apply font-sans text-slate-800 antialiased; } }
 @layer base { :focus-visible { @apply outline-none ring-2 ring-blue-500 ring-offset-2; } @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } } }
-@layer components { .field { @apply mt-1 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100; } .label { @apply text-sm font-medium text-slate-700; } .card { @apply rounded-xl border bg-white shadow-sm; } }
+@layer base { :root[data-reduce-motion='true'] *,:root[data-reduce-motion='true'] *::before,:root[data-reduce-motion='true'] *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; } }
+@layer components { .field { @apply mt-1 w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100; } .label { @apply text-sm font-medium text-slate-700; } .card { background-color: var(--surface); @apply rounded-xl border shadow-sm; } }
+@layer components { .auth-dark .label { @apply text-slate-200; } .auth-dark .field { @apply border-slate-600 bg-slate-900 text-white placeholder:text-slate-500 focus:border-cyan-400 focus:ring-cyan-900; } }
+@layer base { html,body,#root { width: 100%; max-width: 100%; min-height: 100%; overflow-x: hidden; } img,svg { max-width: 100%; } }
+@media (max-width: 639px) {
+  input,select,textarea { font-size: 16px !important; }
+  button,a,input,select { touch-action: manipulation; }
+  .card { min-width: 0; }
+}

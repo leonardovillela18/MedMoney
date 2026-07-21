@@ -1,4 +1,4 @@
-# API MedMoney
+# API MedFinance
 
 Requer Python 3.12. Crie um ambiente virtual e execute:
 

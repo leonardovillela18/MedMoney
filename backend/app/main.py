@@ -22,6 +22,7 @@ from app.api.routes.insights import router as insights_router
 from app.api.routes.analytics import router as analytics_router
 from app.api.routes.goals import router as goals_router
 from app.api.routes.alerts import router as alerts_router
+from app.api.routes.admin_users import router as admin_users_router
 from app.core.config import get_settings
 from app.core.middleware import AuditMiddleware,RequestContextMiddleware
 from app.database.session import SessionLocal
@@ -29,10 +30,10 @@ from app.infrastructure.cache import get_cache
 from app.infrastructure.jobs import get_job_queue
 from app.infrastructure.storage import get_storage
 settings=get_settings();logging.basicConfig(level=getattr(logging,settings.log_level.upper(),'INFO'),format='%(asctime)s %(levelname)s %(name)s %(message)s')
-app=FastAPI(title='MedMoney API',version=settings.app_version,docs_url='/docs' if settings.enable_docs else None,redoc_url='/redoc' if settings.enable_docs else None,openapi_url='/openapi.json' if settings.enable_docs else None)
+app=FastAPI(title='MedFinance API',version=settings.app_version,docs_url='/docs' if settings.enable_docs else None,redoc_url='/redoc' if settings.enable_docs else None,openapi_url='/openapi.json' if settings.enable_docs else None)
 app.state.limiter=limiter;app.add_exception_handler(RateLimitExceeded,_rate_limit_exceeded_handler)
 app.add_middleware(AuditMiddleware);app.add_middleware(RequestContextMiddleware);app.add_middleware(GZipMiddleware,minimum_size=700);app.add_middleware(TrustedHostMiddleware,allowed_hosts=settings.hosts);app.add_middleware(CORSMiddleware,allow_origins=settings.origins,allow_credentials=True,allow_methods=['GET','POST','PUT','PATCH','DELETE','OPTIONS'],allow_headers=['Authorization','Content-Type','X-Request-ID','X-Device-Name'])
-for router in (auth_router,contractors_router,shifts_router,receivables_router,dashboard_router,invoices_router,taxes_router,cashflow_router,expenses_router,today_router,insights_router,analytics_router,goals_router,alerts_router):app.include_router(router,prefix='/api/v1')
+for router in (auth_router,contractors_router,shifts_router,receivables_router,dashboard_router,invoices_router,taxes_router,cashflow_router,expenses_router,today_router,insights_router,analytics_router,goals_router,alerts_router,admin_users_router):app.include_router(router,prefix='/api/v1')
 @app.exception_handler(HTTPException)
 async def http_error(request:Request,error:HTTPException):return JSONResponse(status_code=error.status_code,content={'success':False,'error':{'code':f'HTTP_{error.status_code}','message':str(error.detail),'request_id':getattr(request.state,'request_id',None)},'detail':error.detail},headers=error.headers)
 @app.exception_handler(RequestValidationError)

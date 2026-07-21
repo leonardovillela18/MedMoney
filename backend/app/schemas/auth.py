@@ -14,7 +14,7 @@ class LogoutRequest(RefreshRequest): pass
 class SessionResponse(BaseModel):
     id:str; ip_address:str|None; user_agent:str|None; session_name:str|None; last_used_at:str|None; expires_at:str; current:bool=False
 class UserResponse(BaseModel):
-    id:str; name:str; email:EmailStr; crm:str; crm_uf:str; specialty:str; city:str; state:str
+    id:str; name:str; email:EmailStr; crm:str; crm_uf:str; specialty:str; city:str; state:str; is_admin:bool=False
     model_config={'from_attributes':True}
 class ForgotPasswordRequest(BaseModel): email:EmailStr
 class ResetPasswordRequest(BaseModel): token:str; password:str

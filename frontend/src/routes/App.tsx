@@ -17,7 +17,12 @@ import { ContractorDetailPage } from '@/pages/contractors/ContractorDetailPage'
 import { ShiftsPage } from '@/pages/shifts/ShiftsPage'
 import { ShiftFormPage } from '@/pages/shifts/ShiftFormPage'
 import { ShiftDetailPage } from '@/pages/shifts/ShiftDetailPage'
-import { ShiftCalendarPage } from '@/pages/shifts/ShiftCalendarPage'
+import { SettingsPage } from '@/pages/settings/SettingsPage'
+import { CalendarPage } from '@/pages/calendar/CalendarPage'
+import { SurgeriesPage } from '@/pages/surgeries/SurgeriesPage'
+import { SurgeryFormPage } from '@/pages/surgeries/SurgeryFormPage'
+import { SurgeryDetailPage } from '@/pages/surgeries/SurgeryDetailPage'
+import { UsersPage } from '@/pages/admin/UsersPage'
 const TaxesPage = lazy(() =>
   import('@/pages/taxes/TaxesPage').then((x) => ({ default: x.TaxesPage }))
 )
@@ -85,6 +90,7 @@ function Guest({ children }: { children: React.ReactNode }) {
   if (loading) return <FullPageLoader />
   return user ? <Navigate to="/dashboard" replace /> : <>{children}</>
 }
+function AdminOnly({children}:{children:React.ReactNode}){const{user,loading}=useAuth();if(loading)return <FullPageLoader/>;return user?.is_admin?<>{children}</>:<Navigate to="/dashboard" replace/>}
 const lazyPage = (page: React.ReactNode) => (
   <Suspense fallback={<FullPageLoader />}>{page}</Suspense>
 )
@@ -126,7 +132,7 @@ export function App() {
         />
         <Route path="/plantoes" element={<ShiftsPage />} />
         <Route path="/plantoes/novo" element={<ShiftFormPage />} />
-        <Route path="/plantoes/calendario" element={<ShiftCalendarPage />} />
+        <Route path="/plantoes/calendario" element={<CalendarPage />} />
         <Route path="/plantoes/:id" element={<ShiftDetailPage />} />
         <Route path="/plantoes/:id/editar" element={<ShiftFormPage />} />
         <Route path="/impostos" element={lazyPage(<TaxesPage />)} />
@@ -155,11 +161,16 @@ export function App() {
         <Route path="/metas/:id/editar" element={lazyPage(<GoalFormPage />)} />
         <Route path="/alertas" element={lazyPage(<AlertsPage />)} />
         <Route path="/alertas/:id" element={lazyPage(<AlertDetailPage />)} />
+        <Route path="/configuracoes" element={<SettingsPage />} />
+        <Route path="/usuarios" element={<AdminOnly><UsersPage /></AdminOnly>} />
+        <Route path="/calendario" element={<CalendarPage />} />
+        <Route path="/cirurgias" element={<SurgeriesPage />} />
+        <Route path="/cirurgias/nova" element={<SurgeryFormPage />} />
+        <Route path="/cirurgias/:id" element={<SurgeryDetailPage />} />
+        <Route path="/cirurgias/:id/editar" element={<SurgeryFormPage />} />
         {[
           'financeiro',
           'notas-fiscais',
-          'calendario',
-          'configuracoes',
           'perfil',
         ].map((p) => (
           <Route key={p} path={'/' + p} element={<ComingSoonPage />} />

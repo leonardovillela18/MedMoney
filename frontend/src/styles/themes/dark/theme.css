@@ -1,0 +1,49 @@
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --app-bg: #061426;
+  --surface: #0b1f33;
+  --surface-muted: #102a42;
+  --theme-border: #24445f;
+  --theme-text: #f1f7fb;
+  --theme-muted: #9ab1c5;
+  --theme-accent: #2dd4bf;
+}
+
+html[data-theme='dark'] body { background: var(--app-bg); color: var(--theme-text); }
+html[data-theme='dark'] * { border-color: var(--theme-border); }
+html[data-theme='dark'] .card,
+html[data-theme='dark'] aside,
+html[data-theme='dark'] header,
+html[data-theme='dark'] .bg-white { background-color: var(--surface) !important; }
+html[data-theme='dark'] .bg-white\/95 { background-color: rgb(11 31 51 / .95) !important; }
+html[data-theme='dark'] .bg-slate-50,
+html[data-theme='dark'] .bg-slate-50\/50,
+html[data-theme='dark'] .bg-slate-50\/70,
+html[data-theme='dark'] .bg-slate-100 { background-color: var(--surface-muted) !important; }
+html[data-theme='dark'] .hover\:bg-slate-50:hover,
+html[data-theme='dark'] .hover\:bg-slate-100:hover { background-color: #163650 !important; }
+html[data-theme='dark'] .text-slate-900,
+html[data-theme='dark'] .text-slate-800,
+html[data-theme='dark'] .text-slate-700 { color: var(--theme-text) !important; }
+html[data-theme='dark'] .text-slate-600,
+html[data-theme='dark'] .text-slate-500,
+html[data-theme='dark'] .text-slate-400,
+html[data-theme='dark'] .text-slate-300 { color: var(--theme-muted) !important; }
+html[data-theme='dark'] .text-blue-600,
+html[data-theme='dark'] .text-blue-700 { color: #2dd4bf !important; }
+html[data-theme='dark'] .bg-blue-50,
+html[data-theme='dark'] .bg-blue-100 { background-color: rgb(13 148 136 / .16) !important; }
+html[data-theme='dark'] .bg-blue-600 { background-color: #0891b2 !important; }
+html[data-theme='dark'] .border-blue-500 { border-color: #2dd4bf !important; }
+html[data-theme='dark'] .ring-blue-500 { --tw-ring-color: #2dd4bf !important; }
+html[data-theme='dark'] .field,
+html[data-theme='dark'] input,
+html[data-theme='dark'] textarea,
+html[data-theme='dark'] select { background-color: #0f2940; border-color: #31536d; color: #f1f7fb; }
+html[data-theme='dark'] .field::placeholder,
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder { color: #6f8ba2; }
+html[data-theme='dark'] .label { color: #c8d8e5; }
+html[data-theme='dark'] table { color: #dce9f2; }
+html[data-theme='dark'] aside img[alt='MedFinance'] { border-radius: .75rem; background: white; padding: .45rem .65rem; }
+html[data-theme='dark'] header img[alt='MedFinance'] { border-radius: .5rem; background: white; padding: .25rem .45rem; }
