@@ -3,7 +3,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from app.database.session import SessionLocal
 from app.services.audit_service import AuditService
-logger=logging.getLogger('medmoney.http')
+logger=logging.getLogger('crmoney.http')
 class RequestContextMiddleware(BaseHTTPMiddleware):
  async def dispatch(self,request:Request,call_next):
   request_id=request.headers.get('x-request-id') or str(uuid.uuid4());request.state.request_id=request_id;started=time.perf_counter()

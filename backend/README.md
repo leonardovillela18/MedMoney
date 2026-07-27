@@ -1,4 +1,4 @@
-# API MedFinance
+# API CRMoney
 
 Requer Python 3.12. Crie um ambiente virtual e execute:
 

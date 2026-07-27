@@ -1,0 +1,117 @@
+COMO RODAR O CRMONEY PARA TESTES
+==================================
+
+OPCAO RECOMENDADA: DOCKER
+-------------------------
+
+Requisitos:
+- Docker Desktop instalado e aberto.
+- Aguarde o Docker Desktop mostrar "Engine running" antes de continuar.
+- Portas 8082 e 8000 livres.
+
+1. Abra o PowerShell.
+
+2. Entre na pasta do projeto:
+
+   cd "C:\Users\Administrador\Desktop\MedMoney\MedMoney"
+
+3. No primeiro uso, ou depois de alterar dependencias ou Dockerfiles, execute:
+
+   .\scripts\iniciar.ps1 -Build
+
+4. Nas proximas vezes, basta executar:
+
+   .\scripts\iniciar.ps1
+
+5. Aguarde os containers iniciarem e acesse:
+
+   Sistema: http://localhost:8082
+   API/Swagger: http://localhost:8000/docs
+
+6. Use o acesso administrativo de teste:
+
+   E-mail: admin@crmoney.com
+   Senha:  Admin@123
+
+
+COMANDOS UTEIS
+--------------
+
+Ver o estado dos containers:
+
+   docker compose ps
+
+Acompanhar os logs:
+
+   docker compose logs -f
+
+Acompanhar somente os logs do backend:
+
+   docker compose logs -f backend
+
+Parar o sistema:
+
+   .\scripts\parar.ps1
+
+Se o PowerShell bloquear a execucao dos scripts, use:
+
+   docker compose up -d --build
+
+Para parar sem utilizar o script:
+
+   docker compose down
+
+ATENCAO: nao utilize "docker compose down -v" se quiser preservar os dados
+de teste. A opcao "-v" apaga os volumes do banco, Redis e uploads.
+
+
+TESTES AUTOMATIZADOS
+--------------------
+
+Backend:
+
+   cd "C:\Users\Administrador\Desktop\MedMoney\MedMoney\backend"
+   python -m pytest -q
+
+Frontend:
+
+   cd "C:\Users\Administrador\Desktop\MedMoney\MedMoney\frontend"
+   npm install
+   npm run lint
+   npm run build
+
+
+DESENVOLVIMENTO SEM DOCKER (OPCIONAL)
+-------------------------------------
+
+Backend - requer Python 3.12 ou superior:
+
+   cd "C:\Users\Administrador\Desktop\MedMoney\MedMoney\backend"
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   pip install -r requirements.txt -r requirements-dev.txt
+   Copy-Item .env.example .env
+   alembic upgrade head
+   uvicorn app.main:app --reload
+
+Frontend - abra outro PowerShell e use Node.js 22:
+
+   cd "C:\Users\Administrador\Desktop\MedMoney\MedMoney\frontend"
+   npm install
+   Copy-Item .env.example .env
+   npm run dev
+
+O endereco mostrado pelo Vite no terminal deve ser usado para acessar o
+frontend no modo de desenvolvimento.
+
+
+SOLUCAO RAPIDA DE PROBLEMAS
+---------------------------
+
+- Confirme se o Docker Desktop esta aberto.
+- Se aparecer "dockerDesktopLinuxEngine" ou "daemon is running", o motor do
+  Docker ainda nao iniciou. Abra o Docker Desktop e aguarde "Engine running".
+- Verifique os containers com "docker compose ps".
+- Consulte erros com "docker compose logs backend".
+- Se uma porta estiver ocupada, feche o programa que usa a porta 8082 ou 8000.
+- Depois de mudar dependencias, execute novamente ".\scripts\iniciar.ps1 -Build".

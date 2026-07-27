@@ -13,6 +13,12 @@ class User(TimestampMixin,Base):
     id: Mapped[uuid.UUID]=mapped_column(primary_key=True,default=uuid.uuid4)
     name: Mapped[str]=mapped_column(String(120)); crm: Mapped[str]=mapped_column(String(30)); crm_uf: Mapped[str]=mapped_column(String(2)); email: Mapped[str]=mapped_column(String(255),unique=True,index=True); password_hash: Mapped[str]=mapped_column(String(255)); cnpj: Mapped[str]=mapped_column(String(18),unique=True); phone: Mapped[str]=mapped_column(String(30)); city: Mapped[str]=mapped_column(String(100)); state: Mapped[str]=mapped_column(String(2)); specialty: Mapped[str]=mapped_column(String(100))
     refresh_tokens: Mapped[list['RefreshToken']]=relationship(back_populates='user',cascade='all, delete-orphan')
+class AssistantLink(Base):
+    __tablename__='assistant_links'
+    id: Mapped[uuid.UUID]=mapped_column(primary_key=True,default=uuid.uuid4)
+    assistant_id: Mapped[uuid.UUID]=mapped_column(ForeignKey('users.id'),unique=True,index=True)
+    doctor_id: Mapped[uuid.UUID]=mapped_column(ForeignKey('users.id'),index=True)
+    created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now())
 class RefreshToken(TimestampMixin,Base):
     __tablename__='refresh_tokens'
     id: Mapped[uuid.UUID]=mapped_column(primary_key=True,default=uuid.uuid4)

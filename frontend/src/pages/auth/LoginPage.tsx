@@ -21,7 +21,7 @@ export function LoginPage() {
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<Data>({
     resolver: zodResolver(schema),
     defaultValues: {
-      email: import.meta.env.DEV ? 'admin@medmoney.com' : '',
+      email: import.meta.env.DEV ? 'admin@crmoney.com' : '',
       password: import.meta.env.DEV ? 'Admin@123' : '',
       keep: true,
     },
@@ -40,7 +40,7 @@ export function LoginPage() {
   return <AuthShell title="Boas-vindas" subtitle="Entre para acompanhar sua vida financeira." darkForm>
     {import.meta.env.DEV && <div className="mt-6 rounded-lg border border-cyan-700/60 bg-cyan-950/50 p-3 text-sm text-cyan-100">
       <p className="font-semibold">Acesso administrativo de desenvolvimento</p>
-      <p>E-mail: admin@medmoney.com</p>
+      <p>E-mail: admin@crmoney.com</p>
       <p>Senha: Admin@123</p>
     </div>}
     <form onSubmit={handleSubmit(submit)} className="mt-8 space-y-5">

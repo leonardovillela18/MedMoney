@@ -21,7 +21,7 @@ import {
   WalletCards,
   X,
 } from 'lucide-react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -39,6 +39,7 @@ const groups: readonly MenuGroup[] = [
     label: 'Serviço',
     icon: BriefcaseMedical,
     items: [
+      ['/consultas', 'Consultas', Stethoscope],
       ['/plantoes', 'Plantões', CalendarDays],
       ['/cirurgias', 'Cirurgias', Scissors],
       ['/contratantes', 'Contratantes', Building2],
@@ -80,11 +81,13 @@ export function AppLayout() {
   const [openGroup, setOpenGroup] = useState<GroupId | null>(() => groupForPath(location.pathname))
   const [headerPanel, setHeaderPanel] = useState<'account' | 'notifications' | null>(null)
   const [criticalToast, setCriticalToast] = useState(false)
+  const assistantAllowed = ['/dashboard','/consultas','/plantoes','/cirurgias','/contratantes','/calendario']
   const alerts = useQuery({
     queryKey: ['alerts-dashboard'],
     queryFn: alertsService.dashboard,
     staleTime: 15_000,
     refetchInterval: 30_000,
+    enabled: !user?.is_assistant,
   })
 
   useEffect(() => {
@@ -102,14 +105,14 @@ export function AppLayout() {
 
   useEffect(() => {
     const count = alerts.data?.counts.Crítica ?? 0
-    const previous = Number(localStorage.getItem('medmoney_critical_alerts') ?? 0)
+    const previous = Number(localStorage.getItem('crmoney_critical_alerts') ?? 0)
     if (count > previous) {
       setCriticalToast(true)
       const timer = window.setTimeout(() => setCriticalToast(false), 4000)
-      localStorage.setItem('medmoney_critical_alerts', String(count))
+      localStorage.setItem('crmoney_critical_alerts', String(count))
       return () => window.clearTimeout(timer)
     }
-    localStorage.setItem('medmoney_critical_alerts', String(count))
+    localStorage.setItem('crmoney_critical_alerts', String(count))
   }, [alerts.data?.counts.Crítica])
 
   const navItem = ([path, label, Icon]: MenuItem, nested = false) => (
@@ -131,11 +134,11 @@ export function AppLayout() {
   const side = (
     <aside className="flex h-full w-[min(16rem,calc(100vw-2.75rem))] flex-col border-r bg-white p-4 md:w-64">
       <div className="mb-8 px-2">
-        <img src="/img/logo_vazado.png" alt="MedFinance" className="h-auto w-48" />
+        <img src="/img/Logo_vazada.png" alt="CRMoney" className="h-auto w-48" />
       </div>
       <nav className="space-y-1 overflow-y-auto pb-4">
         {navItem(['/dashboard', 'Meu Dia', LayoutDashboard])}
-        {groups.map((group) => {
+        {(user?.is_assistant ? groups.slice(0, 1) : groups).map((group) => {
           const GroupIcon = group.icon
           const expanded = openGroup === group.id
           const active = group.items.some(([path]) => location.pathname.startsWith(path))
@@ -158,7 +161,9 @@ export function AppLayout() {
             </div>
           </div>
         })}
-        {navItem(['/configuracoes', 'Configurações', Settings])}
+        {user?.is_assistant && navItem(['/calendario', 'Calendário', CalendarDays])}
+        {!user?.is_assistant && navItem(['/auxiliares', 'Auxiliares', Users])}
+        {!user?.is_assistant && navItem(['/configuracoes', 'Configurações', Settings])}
         {user?.is_admin && navItem(['/usuarios', 'Usuários', Users])}
       </nav>
       <button
@@ -170,6 +175,8 @@ export function AppLayout() {
       </button>
     </aside>
   )
+
+  if (user?.is_assistant && !assistantAllowed.some((path) => location.pathname.startsWith(path))) return <Navigate to="/dashboard" replace />
 
   return <div className="min-h-screen bg-[var(--app-bg)]">
     <a href="#main-content" className="sr-only z-[110] rounded bg-white p-3 focus:not-sr-only focus:fixed focus:left-3 focus:top-3">Ir para o conteúdo principal</a>
@@ -185,7 +192,7 @@ export function AppLayout() {
     <main id="main-content" tabIndex={-1} className="md:pl-64">
       <header className="sticky top-0 z-30 flex h-16 items-center border-b bg-white/95 px-5 shadow-sm backdrop-blur">
         <button aria-label="Abrir menu" className="md:hidden" onClick={() => setMobileMenuOpen(true)}><Menu /></button>
-        <img src="/img/logo_vazado.png" alt="MedFinance" className="ml-3 hidden h-8 w-auto min-[380px]:block md:hidden" />
+        <img src="/img/Logo_vazada.png" alt="CRMoney" className="ml-3 hidden h-8 w-auto min-[380px]:block md:hidden" />
 
         <div ref={headerRef} className="relative ml-auto flex items-center gap-2">
           <div className="relative">
@@ -229,8 +236,8 @@ export function AppLayout() {
             >
               <span className="grid h-9 w-9 place-items-center rounded-full bg-blue-100 text-blue-700"><UserRound size={19} /></span>
               <span className="hidden sm:block">
-                <span className="block max-w-44 truncate text-sm font-semibold text-slate-800">Dr(a). {user?.name}</span>
-                <span className="block text-xs text-slate-500">{user?.specialty}</span>
+                <span className="block max-w-44 truncate text-sm font-semibold text-slate-800">{user?.is_assistant ? 'Auxiliar' : 'Dr(a).'} {user?.name}</span>
+                <span className="block text-xs text-slate-500">{user?.is_assistant ? `Dr(a). ${user.doctor_name}` : user?.specialty}</span>
               </span>
               <ChevronDown size={15} className="hidden text-slate-400 sm:block" />
             </button>

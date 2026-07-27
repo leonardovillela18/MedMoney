@@ -25,6 +25,7 @@ import { todayService } from '@/services/today'
 import { insightsService } from '@/services/insights'
 import { alertsService } from '@/services/alerts'
 import type { TodayData } from '@/types/today'
+import { AssistantDashboardPage } from './AssistantDashboardPage'
 const money = (n = 0) =>
   n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 function Skeleton() {
@@ -119,7 +120,7 @@ function MiniCalendar({ items }: { items: TodayData['calendar'] }) {
     </section>
   )
 }
-export function DashboardPage() {
+function DoctorDashboard() {
   const { user } = useAuth()
   const q = useQuery({
     queryKey: ['today'],
@@ -271,3 +272,4 @@ export function DashboardPage() {
     </div>
   )
 }
+export function DashboardPage(){const{user}=useAuth();return user?.is_assistant?<AssistantDashboardPage/>:<DoctorDashboard/>}

@@ -1,4 +1,4 @@
-# MedFinance
+# CRMoney
 
 Plataforma financeira para médicos PJ, com módulos de agenda, recebíveis, despesas, impostos, fluxo de caixa, metas, alertas e inteligência financeira.
 

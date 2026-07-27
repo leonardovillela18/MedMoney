@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, func
+from decimal import Decimal
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database.session import Base
 
@@ -13,4 +14,5 @@ class Contractor(Base):
     zip_code: Mapped[str|None]=mapped_column(String(9)); street: Mapped[str|None]=mapped_column(String(180)); number: Mapped[str|None]=mapped_column(String(20)); neighborhood: Mapped[str|None]=mapped_column(String(100)); city: Mapped[str|None]=mapped_column(String(100),index=True); state: Mapped[str|None]=mapped_column(String(2)); complement: Mapped[str|None]=mapped_column(String(120))
     primary_contact: Mapped[str|None]=mapped_column(String(120)); contact_role: Mapped[str|None]=mapped_column(String(100)); contact_phone: Mapped[str|None]=mapped_column(String(30)); contact_email: Mapped[str|None]=mapped_column(String(255))
     payment_day: Mapped[str|None]=mapped_column(String(40)); payment_term_days: Mapped[int|None]=mapped_column(Integer); notes: Mapped[str|None]=mapped_column(Text); active: Mapped[bool]=mapped_column(Boolean,default=True,server_default='true')
+    default_shift_value: Mapped[Decimal|None]=mapped_column(Numeric(12,2))
     created_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now()); updated_at: Mapped[datetime]=mapped_column(DateTime(timezone=True),server_default=func.now(),onupdate=func.now()); deleted_at: Mapped[datetime|None]=mapped_column(DateTime(timezone=True))

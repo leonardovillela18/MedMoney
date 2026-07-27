@@ -10,22 +10,22 @@ from app.auth.security import create_access_token,create_refresh_token,hash_pass
 from app.core.config import get_settings
 from app.database.session import get_db
 from app.models.enterprise import Role,UserRole
-from app.models.user import RefreshToken,User
+from app.models.user import AssistantLink,RefreshToken,User
 from app.schemas.auth import ForgotPasswordRequest,LoginRequest,LogoutRequest,RefreshRequest,RegisterRequest,ResetPasswordRequest,SessionResponse,TokenResponse,UserResponse
 from app.services.audit_service import AuditService
 from app.services.password_reset import request_password_reset
 router=APIRouter(prefix='/auth',tags=['Autenticação']);limiter=Limiter(key_func=get_remote_address)
 settings=get_settings()
-DEV_ADMIN_EMAIL='admin@medmoney.com'
+DEV_ADMIN_EMAIL='admin@crmoney.com'
 DEV_ADMIN_PASSWORD='Admin@123'
 
 def ensure_development_admin(payload:LoginRequest,db:Session)->User|None:
  if settings.environment=='production' or payload.email.lower()!=DEV_ADMIN_EMAIL or payload.password!=DEV_ADMIN_PASSWORD:return None
  user=db.scalar(select(User).where(User.email==DEV_ADMIN_EMAIL))
  if not user:
-  user=User(name='Administrador MedFinance',crm='ADMIN-001',crm_uf='SP',email=DEV_ADMIN_EMAIL,password_hash=hash_password(DEV_ADMIN_PASSWORD),cnpj='00000000000001',phone='11999999999',city='São Paulo',state='SP',specialty='Administração');db.add(user);db.flush()
+  user=User(name='Administrador CRMoney',crm='ADMIN-001',crm_uf='SP',email=DEV_ADMIN_EMAIL,password_hash=hash_password(DEV_ADMIN_PASSWORD),cnpj='00000000000001',phone='11999999999',city='São Paulo',state='SP',specialty='Administração');db.add(user);db.flush()
  else:
-  user.name='Administrador MedFinance';user.password_hash=hash_password(DEV_ADMIN_PASSWORD);user.deleted_at=None
+  user.name='Administrador CRMoney';user.password_hash=hash_password(DEV_ADMIN_PASSWORD);user.deleted_at=None
  role=db.scalar(select(Role).where(Role.name=='ADMIN'))
  if role and not db.scalar(select(UserRole).where(UserRole.user_id==user.id,UserRole.role_id==role.id)):db.add(UserRole(user_id=user.id,role_id=role.id))
  db.commit();db.refresh(user);return user
@@ -62,7 +62,8 @@ def refresh(request:Request,payload:RefreshRequest,db:Session=Depends(get_db)):
 @router.get('/me',response_model=UserResponse)
 def me(user:User=Depends(current_user),db:Session=Depends(get_db)):
  is_admin=bool(db.scalar(select(UserRole.id).join(Role,Role.id==UserRole.role_id).where(UserRole.user_id==user.id,Role.name=='ADMIN')))
- return UserResponse(id=str(user.id),name=user.name,email=user.email,crm=user.crm,crm_uf=user.crm_uf,specialty=user.specialty,city=user.city,state=user.state,is_admin=is_admin)
+ link=db.scalar(select(AssistantLink).where(AssistantLink.assistant_id==user.id));doctor=db.get(User,link.doctor_id) if link else None
+ return UserResponse(id=str(user.id),name=user.name,email=user.email,crm=user.crm,crm_uf=user.crm_uf,specialty=user.specialty,city=user.city,state=user.state,is_admin=is_admin,is_assistant=bool(link),doctor_name=doctor.name if doctor else None)
 @router.post('/logout',status_code=204)
 def logout(request:Request,payload:LogoutRequest,db:Session=Depends(get_db)):
  record=db.scalar(select(RefreshToken).where(RefreshToken.token_hash==hash_token(payload.refresh_token)))

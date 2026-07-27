@@ -5,7 +5,7 @@ from pydantic import model_validator
 class Settings(BaseSettings):
     environment: str = 'development'
     app_version: str = '0.2.0'
-    database_url: str = 'sqlite:///./medmoney.db'
+    database_url: str = 'sqlite:///./crmoney.db'
     jwt_secret_key: str = 'development-only-change-me'
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 30

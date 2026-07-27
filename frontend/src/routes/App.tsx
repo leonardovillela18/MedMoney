@@ -23,6 +23,8 @@ import { SurgeriesPage } from '@/pages/surgeries/SurgeriesPage'
 import { SurgeryFormPage } from '@/pages/surgeries/SurgeryFormPage'
 import { SurgeryDetailPage } from '@/pages/surgeries/SurgeryDetailPage'
 import { UsersPage } from '@/pages/admin/UsersPage'
+import { AssistantsPage } from '@/pages/assistants/AssistantsPage'
+import { ConsultationsPage } from '@/pages/consultations/ConsultationsPage'
 const TaxesPage = lazy(() =>
   import('@/pages/taxes/TaxesPage').then((x) => ({ default: x.TaxesPage }))
 )
@@ -91,6 +93,7 @@ function Guest({ children }: { children: React.ReactNode }) {
   return user ? <Navigate to="/dashboard" replace /> : <>{children}</>
 }
 function AdminOnly({children}:{children:React.ReactNode}){const{user,loading}=useAuth();if(loading)return <FullPageLoader/>;return user?.is_admin?<>{children}</>:<Navigate to="/dashboard" replace/>}
+function DoctorOnly({children}:{children:React.ReactNode}){const{user,loading}=useAuth();if(loading)return <FullPageLoader/>;return !user?.is_assistant?<>{children}</>:<Navigate to="/dashboard" replace/>}
 const lazyPage = (page: React.ReactNode) => (
   <Suspense fallback={<FullPageLoader />}>{page}</Suspense>
 )
@@ -135,6 +138,8 @@ export function App() {
         <Route path="/plantoes/calendario" element={<CalendarPage />} />
         <Route path="/plantoes/:id" element={<ShiftDetailPage />} />
         <Route path="/plantoes/:id/editar" element={<ShiftFormPage />} />
+        <Route path="/consultas" element={<ConsultationsPage />} />
+        <Route path="/consultas/nova" element={<ShiftFormPage />} />
         <Route path="/impostos" element={lazyPage(<TaxesPage />)} />
         <Route path="/fluxo-de-caixa" element={lazyPage(<CashflowPage />)} />
         <Route path="/despesas" element={lazyPage(<ExpensesPage />)} />
@@ -163,6 +168,7 @@ export function App() {
         <Route path="/alertas/:id" element={lazyPage(<AlertDetailPage />)} />
         <Route path="/configuracoes" element={<SettingsPage />} />
         <Route path="/usuarios" element={<AdminOnly><UsersPage /></AdminOnly>} />
+        <Route path="/auxiliares" element={<DoctorOnly><AssistantsPage /></DoctorOnly>} />
         <Route path="/calendario" element={<CalendarPage />} />
         <Route path="/cirurgias" element={<SurgeriesPage />} />
         <Route path="/cirurgias/nova" element={<SurgeryFormPage />} />

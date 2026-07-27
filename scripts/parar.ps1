@@ -5,10 +5,9 @@ Push-Location $projectRoot
 try {
     docker compose down
     if ($LASTEXITCODE -ne 0) {
-        throw 'Não foi possível parar o MedFinance.'
+        throw 'Nao foi possivel parar o CRMoney.'
     }
-    Write-Host 'MedFinance encerrado.' -ForegroundColor Green
+    Write-Host 'CRMoney encerrado.' -ForegroundColor Green
 } finally {
     Pop-Location
 }
-
