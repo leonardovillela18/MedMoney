@@ -25,7 +25,7 @@ def get_user(user_id:uuid.UUID,_:User=Depends(require_roles('ADMIN')),db:Session
 def create_user(payload:AdminUserCreate,_:User=Depends(require_roles('ADMIN')),db:Session=Depends(get_db)):
  email=payload.email.lower();existing=db.scalar(select(User).where(or_(User.email==email,User.cnpj==payload.cnpj)))
  if existing:raise HTTPException(409,'Já existe um usuário com este e-mail ou CNPJ.')
- item=User(**payload.model_dump(exclude={'password'}),email=email,password_hash=hash_password(payload.password));db.add(item);db.flush();role=db.scalar(select(Role).where(Role.name=='USER'))
+ item=User(**payload.model_dump(exclude={'password','email'}),email=email,password_hash=hash_password(payload.password));db.add(item);db.flush();role=db.scalar(select(Role).where(Role.name=='USER'))
  if role:db.add(UserRole(user_id=item.id,role_id=role.id))
  db.commit();db.refresh(item);return response(item,db)
 @router.put('/{user_id}',response_model=AdminUserResponse)

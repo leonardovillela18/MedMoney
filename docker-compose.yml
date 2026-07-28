@@ -23,6 +23,8 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-development-only-change-me}
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:8082}
       TRUSTED_HOSTS: ${TRUSTED_HOSTS:-localhost,127.0.0.1,backend}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
     volumes: [uploads:/app/uploads]
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}}
     ports: ["8000:8000"]
