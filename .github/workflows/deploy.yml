@@ -34,17 +34,53 @@ jobs:
               -f docker-compose.prod.yml \
               up -d --build
 
-            echo "Status dos containers..."
+            echo "Status inicial dos containers..."
             docker compose \
               -f docker-compose.yml \
               -f docker-compose.prod.yml \
               ps
 
-            echo "Aguardando aplicacao..."
-            sleep 10
+            echo "Aguardando backend ficar saudavel..."
 
-            echo "Testando backend..."
-            curl -f http://localhost:8000/live
-            curl -f http://localhost:8000/ready
+            for i in {1..30}; do
+              STATUS=$(docker inspect \
+                --format='{{.State.Health.Status}}' \
+                crmoney-backend-1 2>/dev/null || echo "starting")
+
+              echo "Tentativa $i/30 - Backend: $STATUS"
+
+              if [ "$STATUS" = "healthy" ]; then
+                break
+              fi
+
+              sleep 5
+            done
+
+            STATUS=$(docker inspect \
+              --format='{{.State.Health.Status}}' \
+              crmoney-backend-1 2>/dev/null || echo "unknown")
+
+            if [ "$STATUS" != "healthy" ]; then
+              echo "ERRO: Backend nao ficou saudavel a tempo."
+              echo "Ultimos logs do backend:"
+              docker logs crmoney-backend-1 --tail 100
+              exit 1
+            fi
+
+            echo "Backend saudavel."
+
+            echo "Testando /live..."
+            curl --fail --show-error http://localhost:8000/live
+
+            echo ""
+            echo "Testando /ready..."
+            curl --fail --show-error http://localhost:8000/ready
+
+            echo ""
+            echo "Status final dos containers..."
+            docker compose \
+              -f docker-compose.yml \
+              -f docker-compose.prod.yml \
+              ps
 
             echo "Deploy concluido com sucesso."
