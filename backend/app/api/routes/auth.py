@@ -36,7 +36,7 @@ def tokens_for(user:User,db:Session,request:Request,rotated_from=None)->TokenRes
 def register(request:Request,payload:RegisterRequest,db:Session=Depends(get_db)):
  existing=db.scalar(select(User).where((User.email==payload.email.lower())|(User.cnpj==payload.cnpj)))
  if existing:raise HTTPException(409,'Já existe uma conta com este e-mail ou CNPJ.')
- user=User(**payload.model_dump(exclude={'password'}),email=payload.email.lower(),password_hash=hash_password(payload.password));db.add(user);db.flush();role=db.scalar(select(Role).where(Role.name=='USER'))
+ user=User(**payload.model_dump(exclude={'password','email'}),email=payload.email.lower(),password_hash=hash_password(payload.password));db.add(user);db.flush();role=db.scalar(select(Role).where(Role.name=='USER'))
  if role:db.add(UserRole(user_id=user.id,role_id=role.id))
  db.commit();db.refresh(user);AuditService.record(db,'REGISTER','User',user.id,user.id,request);return tokens_for(user,db,request)
 @router.post('/login',response_model=TokenResponse)
