@@ -52,10 +52,9 @@ export function LoginPage() {
     <AuthShell
       title="Boas-vindas"
       subtitle="Entre para acompanhar sua vida financeira."
-      darkForm
     >
       {import.meta.env.DEV && (
-        <div className="mt-6 rounded-lg border border-cyan-700/60 bg-cyan-950/50 p-3 text-sm text-cyan-100">
+        <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
           <p className="font-semibold">
             Acesso administrativo de desenvolvimento
           </p>
@@ -78,14 +77,14 @@ export function LoginPage() {
             {...register('email')}
           />
           {errors.email && (
-            <p className="mt-1 text-xs text-red-300">{errors.email.message}</p>
+            <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
           )}
         </div>
         <div>
           <div className="flex justify-between">
             <label className="label">Senha</label>
             <Link
-              className="text-xs font-medium text-cyan-300 hover:text-cyan-200"
+              className="text-xs font-medium text-blue-600 hover:text-blue-700"
               to="/esqueci-senha"
             >
               Esqueci minha senha
@@ -98,12 +97,12 @@ export function LoginPage() {
             {...register('password')}
           />
           {errors.password && (
-            <p className="mt-1 text-xs text-red-300">
+            <p className="mt-1 text-xs text-red-600">
               {errors.password.message}
             </p>
           )}
         </div>
-        <label className="flex items-center gap-2 text-sm text-slate-300">
+        <label className="flex items-center gap-2 text-sm text-slate-600">
           <input
             type="checkbox"
             className="rounded border-slate-300 text-blue-600"
@@ -120,10 +119,10 @@ export function LoginPage() {
           {isSubmitting ? 'Entrando...' : 'Entrar'}
         </Button>
       </form>
-      <p className="mt-7 text-center text-sm text-slate-300">
+      <p className="mt-7 text-center text-sm text-slate-600">
         Ainda não tem conta?{' '}
         <Link
-          className="font-semibold text-cyan-300 hover:text-cyan-200"
+          className="font-semibold text-blue-600 hover:text-blue-700"
           to="/cadastro"
         >
           Criar conta
