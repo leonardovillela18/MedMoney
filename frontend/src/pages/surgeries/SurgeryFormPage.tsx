@@ -115,7 +115,7 @@ export function SurgeryFormPage() {
             ))}
           </select>
         </Field>
-        <Field label="Especialidade">
+        <div>
           <SpecialtySelect
             value={form.specialty_id}
             defaultToPrimary={!id}
@@ -127,18 +127,27 @@ export function SurgeryFormPage() {
               })
             }
           />
-        </Field>
-        <div className="rounded-lg bg-slate-50 p-3 text-sm">
-          <p className="text-xs text-slate-500">Local selecionado</p>
-          <p className="mt-1 font-medium">
-            {form.hospital_sector || 'Selecione um contratante'}
-          </p>
-          {(form.city || form.state) && (
-            <p className="mt-1 text-slate-500">
-              {[form.city, form.state].filter(Boolean).join(' / ')}
-            </p>
-          )}
         </div>
+        <Field label="Ou digite uma especialidade">
+          <input
+            className="field"
+            value={form.specialty ?? ''}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                specialty_id: undefined,
+                specialty: e.target.value,
+              })
+            }
+          />
+        </Field>
+        <Field label="Hospital / setor">
+          <input
+            className="field"
+            value={form.hospital_sector ?? ''}
+            onChange={(e) => set('hospital_sector', e.target.value)}
+          />
+        </Field>
         <Field label="Data *">
           <input
             required

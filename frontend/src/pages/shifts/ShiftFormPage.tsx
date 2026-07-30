@@ -8,6 +8,7 @@ import { taxesService } from '@/services/taxes'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/context/AuthContext'
 import type { Shift } from '@/types/shift'
+import { LocationFields } from '@/components/common/LocationFields'
 import { SpecialtySelect } from '@/components/common/SpecialtySelect'
 
 export function ShiftFormPage() {
@@ -179,7 +180,7 @@ export function ShiftFormPage() {
               ))}
             </select>
           </Field>
-          <Field label="Especialidade">
+          <div>
             <SpecialtySelect
               value={s.specialty_id}
               defaultToPrimary={!id}
@@ -191,18 +192,17 @@ export function ShiftFormPage() {
                 })
               }
             />
-          </Field>
-          <div className="sm:col-span-2 rounded-lg bg-slate-50 p-3 text-sm">
-            <p className="text-xs text-slate-500">Local selecionado</p>
-            <p className="mt-1 font-medium">
-              {s.hospital_sector || 'Selecione um contratante'}
-            </p>
-            {(s.city || s.state) && (
-              <p className="mt-1 text-slate-500">
-                {[s.city, s.state].filter(Boolean).join(' / ')}
-              </p>
-            )}
           </div>
+          <Field label="Ou digite uma especialidade">{f('specialty')}</Field>
+          <Field label="Hospital / setor">{f('hospital_sector')}</Field>
+          <LocationFields
+            state={s.state}
+            city={s.city}
+            cityCode={s.city_ibge_code}
+            onChange={(location) =>
+              setS((current) => ({ ...current, ...location }))
+            }
+          />
           <Field label="Data *">{f('date')}</Field>
           <Field label="Início *">{f('start_time')}</Field>
           <Field label="Fim *">{f('end_time')}</Field>

@@ -15,10 +15,9 @@ class ShiftService:
   return x
  def payload(self,user,data,current=None):
   if not self.db.get(Contractor,data['contractor_id']) or not self.db.scalar(__import__('sqlalchemy').select(Contractor).where(Contractor.id==data['contractor_id'],Contractor.user_id==user,Contractor.deleted_at.is_(None))):raise HTTPException(422,'Contratante inválido.')
-  from app.services.location_service import validate_location
-  if data.get('city') and not data.get('city_ibge_code') and not current:raise HTTPException(422,'Selecione uma cidade válida da lista.')
+  # O cÃ³digo IBGE Ã© opcional: cidade e local tambÃ©m podem ser digitados.
   if current and data.get('city')==current.city and not data.get('city_ibge_code'):data['city_ibge_code']=current.city_ibge_code
-  if data.get('state') or data.get('city_ibge_code'):data['state'],data['city'],data['city_ibge_code']=validate_location(data.get('state'),data.get('city'),data.get('city_ibge_code'))
+  if data.get('city_ibge_code') and len(data['city_ibge_code'])!=7:data['city_ibge_code']=None
   if data.get('specialty_id'):
    from app.models.medical_specialty import MedicalSpecialty
    specialty=self.db.scalar(select(MedicalSpecialty).where(MedicalSpecialty.id==data['specialty_id'],MedicalSpecialty.active.is_(True)))
