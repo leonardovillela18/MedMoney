@@ -1,9 +1,135 @@
 import { useQuery } from '@tanstack/react-query'
-import { CalendarDays,Plus } from 'lucide-react'
+import { CalendarDays, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 import { shiftsService } from '@/services/shifts'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/context/AuthContext'
-const colors:Record<string,string>={Agendado:'bg-blue-50 text-blue-700',Realizado:'bg-emerald-50 text-emerald-700',Recebido:'bg-slate-100 text-slate-700',Cancelado:'bg-red-50 text-red-700',Atrasado:'bg-orange-50 text-orange-700'}
-export function ShiftsPage(){const{user}=useAuth(),assistant=!!user?.is_assistant,[search,setSearch]=useState('');const{data,isLoading}=useQuery({queryKey:['shifts',search],queryFn:()=>shiftsService.list({search,page:1,page_size:30})});const headers=assistant?['Data','Compromisso','Tipo','Horas','Status','']:['Data','Contratante','Tipo','Horas','Valor','Recebimento previsto','Status',''];return <div><div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm text-slate-500">Agenda profissional</p><h1 className="mt-1 text-2xl font-bold">Plantões e compromissos</h1></div><div className="flex gap-2"><Link to="/plantoes/calendario"><Button className="bg-white text-slate-700"><CalendarDays size={16} className="mr-2"/>Calendário</Button></Link><Link to="/plantoes/novo"><Button><Plus size={16} className="mr-2"/>Novo compromisso</Button></Link></div></div><div className="card overflow-hidden"><div className="border-b p-4"><input className="field mt-0 max-w-sm" placeholder="Pesquisar compromissos" value={search} onChange={e=>setSearch(e.target.value)}/></div>{isLoading?<div className="m-5 h-32 animate-pulse rounded bg-slate-100"/>:!data?.total?<div className="grid min-h-72 place-items-center text-center"><p className="font-semibold">Nenhum compromisso cadastrado.</p></div>:<div className="overflow-x-auto"><table className="min-w-[650px] w-full text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr>{headers.map(h=><th className="px-5 py-3" key={h}>{h}</th>)}</tr></thead><tbody>{data.items.map(s=><tr className="border-t" key={s.id}><td className="px-5 py-4">{new Date(`${s.date}T12:00`).toLocaleDateString('pt-BR')}</td><td className="px-5 py-4">{s.title||s.type}</td><td className="px-5 py-4">{s.type}</td><td className="px-5 py-4">{s.duration_hours}h</td>{!assistant&&<><td className="px-5 py-4">{Number(s.gross_value).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td><td className="px-5 py-4">{s.expected_payment_date||'—'}</td></>}<td className="px-5 py-4"><span className={`rounded-full px-2 py-1 text-xs ${colors[s.status]}`}>{s.status}</span></td><td className="px-5 py-4"><Link className="text-blue-600" to={`/plantoes/${s.id}`}>Ver</Link></td></tr>)}</tbody></table></div>}</div></div>}
+const colors: Record<string, string> = {
+  Agendado: 'bg-blue-50 text-blue-700',
+  Realizado: 'bg-emerald-50 text-emerald-700',
+  Recebido: 'bg-slate-100 text-slate-700',
+  Cancelado: 'bg-red-50 text-red-700',
+  Atrasado: 'bg-orange-50 text-orange-700',
+}
+export function ShiftsPage() {
+  const { user } = useAuth(),
+    assistant = !!user?.is_assistant,
+    [search, setSearch] = useState('')
+  const { data, isLoading } = useQuery({
+    queryKey: ['shifts', search],
+    queryFn: () => shiftsService.list({ search, page: 1, page_size: 30 }),
+  })
+  const headers = assistant
+    ? ['Data', 'Compromisso', 'Tipo', 'Horas', 'Status', '']
+    : [
+        'Data',
+        'Contratante',
+        'Tipo',
+        'Horas',
+        'Valor',
+        'Recebimento previsto',
+        'Status',
+        '',
+      ]
+  return (
+    <div>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm text-slate-500">Agenda profissional</p>
+          <h1 className="mt-1 text-2xl font-bold">Plantões e compromissos</h1>
+        </div>
+        <div className="flex gap-2">
+          <Link to="/plantoes/calendario">
+            <Button className="bg-white text-slate-700">
+              <CalendarDays size={16} className="mr-2" />
+              Calendário
+            </Button>
+          </Link>
+          <Link to="/plantoes/novo">
+            <Button>
+              <Plus size={16} className="mr-2" />
+              Novo compromisso
+            </Button>
+          </Link>
+        </div>
+      </div>
+      <div className="card overflow-hidden">
+        <div className="border-b p-4">
+          <input
+            className="field mt-0 max-w-sm"
+            placeholder="Pesquisar compromissos"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        {isLoading ? (
+          <div className="m-5 h-32 animate-pulse rounded bg-slate-100" />
+        ) : !data?.total ? (
+          <div className="grid min-h-72 place-items-center text-center">
+            <p className="font-semibold">Nenhum compromisso cadastrado.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-[650px] w-full text-left text-sm">
+              <thead className="bg-slate-50 text-xs text-slate-500">
+                <tr>
+                  {headers.map((h) => (
+                    <th className="px-5 py-3" key={h}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {data.items.map((s) => (
+                  <tr className="border-t" key={s.id}>
+                    <td className="px-5 py-4">
+                      {new Date(`${s.date}T12:00`).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-5 py-4">{s.title || s.type}</td>
+                    <td className="px-5 py-4">{s.type}</td>
+                    <td className="px-5 py-4">{s.duration_hours}h</td>
+                    {!assistant && (
+                      <>
+                        <td className="px-5 py-4">
+                          {Number(s.gross_value).toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL',
+                          })}
+                        </td>
+                        <td className="px-5 py-4">
+                          {s.expected_payment_date || '—'}
+                        </td>
+                      </>
+                    )}
+                    <td className="px-5 py-4">
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs ${colors[s.status]}`}
+                      >
+                        {s.status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="flex gap-3">
+                        <Link className="text-blue-600" to={`/plantoes/${s.id}`}>
+                          Ver
+                        </Link>
+                        <Link
+                          className="text-blue-600"
+                          to={`/plantoes/${s.id}/editar`}
+                        >
+                          Editar
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

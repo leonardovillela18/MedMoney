@@ -6,6 +6,7 @@ import { shiftsService } from '@/services/shifts'
 import { taxesService } from '@/services/taxes'
 import { Button } from '@/components/ui/Button'
 import type { Shift } from '@/types/shift'
+import { SpecialtySelect } from '@/components/common/SpecialtySelect'
 export function SurgeryFormPage() {
   const { id } = useParams(),
     nav = useNavigate(),
@@ -99,7 +100,10 @@ export function SurgeryFormPage() {
               setForm({
                 ...form,
                 contractor_id: e.target.value,
-                hospital_sector: c?.name ?? form.hospital_sector,
+                hospital_sector: c?.name,
+                city: c?.city,
+                city_ibge_code: c?.city_ibge_code,
+                state: c?.state,
               })
             }}
           >
@@ -111,20 +115,30 @@ export function SurgeryFormPage() {
             ))}
           </select>
         </Field>
-        <Field label="Hospital / setor">
-          <input
-            className="field"
-            value={form.hospital_sector ?? ''}
-            onChange={(e) => set('hospital_sector', e.target.value)}
-          />
-        </Field>
         <Field label="Especialidade">
-          <input
-            className="field"
-            value={form.specialty ?? ''}
-            onChange={(e) => set('specialty', e.target.value)}
+          <SpecialtySelect
+            value={form.specialty_id}
+            defaultToPrimary={!id}
+            onChange={(specialtyId, specialtyName) =>
+              setForm({
+                ...form,
+                specialty_id: specialtyId,
+                specialty: specialtyName,
+              })
+            }
           />
         </Field>
+        <div className="rounded-lg bg-slate-50 p-3 text-sm">
+          <p className="text-xs text-slate-500">Local selecionado</p>
+          <p className="mt-1 font-medium">
+            {form.hospital_sector || 'Selecione um contratante'}
+          </p>
+          {(form.city || form.state) && (
+            <p className="mt-1 text-slate-500">
+              {[form.city, form.state].filter(Boolean).join(' / ')}
+            </p>
+          )}
+        </div>
         <Field label="Data *">
           <input
             required

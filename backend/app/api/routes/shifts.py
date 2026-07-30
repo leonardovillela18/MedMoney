@@ -28,7 +28,10 @@ def create_shift(request:Request,payload:ShiftCreate,user:User=Depends(operation
 @router.put('/{shift_id}',response_model=ShiftResponse)
 def update_shift(request:Request,shift_id:uuid.UUID,payload:ShiftUpdate,user:User=Depends(operational_user),db:Session=Depends(get_db)):
  data=payload.model_dump()
- if getattr(request.state,'is_assistant',False):data.update(gross_value=0,estimated_net_value=0,payment_method=None,expected_payment_date=None)
- return safe(ShiftService(db).update(user.id,shift_id,data),request)
+ service=ShiftService(db)
+ if getattr(request.state,'is_assistant',False):
+  current=service.get(user.id,shift_id)
+  data.update(gross_value=current.gross_value,estimated_net_value=current.estimated_net_value,tax_reserve_percentage=current.tax_reserve_percentage,tax_treatment=current.tax_treatment,payment_method=current.payment_method,expected_payment_date=current.expected_payment_date)
+ return safe(service.update(user.id,shift_id,data),request)
 @router.delete('/{shift_id}',status_code=204)
 def delete_shift(shift_id:uuid.UUID,user:User=Depends(operational_user),db:Session=Depends(get_db)):ShiftService(db).delete(user.id,shift_id);return Response(status_code=204)

@@ -1,13 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import axios from 'axios'
 import { contractorsService } from '@/services/contractors'
 import { shiftsService } from '@/services/shifts'
 import { taxesService } from '@/services/taxes'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/context/AuthContext'
 import type { Shift } from '@/types/shift'
-import { LocationFields } from '@/components/common/LocationFields'
 import { SpecialtySelect } from '@/components/common/SpecialtySelect'
 
 export function ShiftFormPage() {
@@ -16,7 +16,8 @@ export function ShiftFormPage() {
     [params] = useSearchParams(),
     { user } = useAuth(),
     assistant = !!user?.is_assistant,
-    qc = useQueryClient()
+    qc = useQueryClient(),
+    initializedId = useRef<string | undefined>(undefined)
   const [s, setS] = useState<Partial<Shift>>({
       type: params.get('type') || 'Plantão Presencial',
       status: 'Agendado',
@@ -34,15 +35,17 @@ export function ShiftFormPage() {
     queryFn: taxesService.settings,
     enabled: !assistant,
   })
-  useQuery({
+  const { data: existingShift, isLoading: isLoadingShift } = useQuery({
     queryKey: ['shift', id],
     enabled: !!id,
     queryFn: () => shiftsService.get(id!),
-    select: (x) => {
-      setS(x)
-      return x
-    },
   })
+  useEffect(() => {
+    if (existingShift && initializedId.current !== id) {
+      setS(existingShift)
+      initializedId.current = id
+    }
+  }, [existingShift, id])
   const f = (k: keyof Shift) => (
     <input
       className="field"
@@ -64,10 +67,10 @@ export function ShiftFormPage() {
     setS((current) => ({
       ...current,
       contractor_id: contractorId,
-      hospital_sector: current.hospital_sector || contractor?.name,
-      city: current.city || contractor?.city,
-      city_ibge_code: current.city_ibge_code || contractor?.city_ibge_code,
-      state: current.state || contractor?.state,
+      hospital_sector: contractor?.name,
+      city: contractor?.city,
+      city_ibge_code: contractor?.city_ibge_code,
+      state: contractor?.state,
       gross_value: assistant
         ? 0
         : current.gross_value || contractor?.default_shift_value || 0,
@@ -75,6 +78,7 @@ export function ShiftFormPage() {
   }
   const save = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     try {
       await shiftsService.save(
         { ...s, gross_value: assistant ? 0 : s.gross_value } as Omit<
@@ -91,8 +95,18 @@ export function ShiftFormPage() {
         qc.invalidateQueries({ queryKey: ['dashboard'] }),
       ])
       nav('/plantoes')
-    } catch {
-      setError('Não foi possível salvar o compromisso. Revise os dados.')
+    } catch (saveError) {
+      const detail = axios.isAxiosError(saveError)
+        ? saveError.response?.data?.detail
+        : undefined
+      const message = Array.isArray(detail)
+        ? detail.map((item) => item.msg).filter(Boolean).join(' ')
+        : typeof detail === 'string'
+          ? detail
+          : ''
+      setError(
+        message || 'Não foi possível salvar o compromisso. Revise os dados.'
+      )
     }
   }
   const steps = assistant ? [1, 3] : [1, 2, 3]
@@ -103,6 +117,8 @@ export function ShiftFormPage() {
     serviceValue = Number(s.gross_value ?? 0),
     reserve = (serviceValue * numericPercentage) / 100,
     available = serviceValue - reserve
+  if (id && isLoadingShift)
+    return <div className="h-64 animate-pulse rounded-xl bg-slate-100" />
   return (
     <form onSubmit={save} className="mx-auto max-w-3xl">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
@@ -176,15 +192,17 @@ export function ShiftFormPage() {
               }
             />
           </Field>
-          <Field label="Hospital / setor">{f('hospital_sector')}</Field>
-          <LocationFields
-            state={s.state}
-            city={s.city}
-            cityCode={s.city_ibge_code}
-            onChange={(location) =>
-              setS((current) => ({ ...current, ...location }))
-            }
-          />
+          <div className="sm:col-span-2 rounded-lg bg-slate-50 p-3 text-sm">
+            <p className="text-xs text-slate-500">Local selecionado</p>
+            <p className="mt-1 font-medium">
+              {s.hospital_sector || 'Selecione um contratante'}
+            </p>
+            {(s.city || s.state) && (
+              <p className="mt-1 text-slate-500">
+                {[s.city, s.state].filter(Boolean).join(' / ')}
+              </p>
+            )}
+          </div>
           <Field label="Data *">{f('date')}</Field>
           <Field label="Início *">{f('start_time')}</Field>
           <Field label="Fim *">{f('end_time')}</Field>
