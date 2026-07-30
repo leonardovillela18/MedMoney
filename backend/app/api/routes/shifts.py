@@ -11,7 +11,7 @@ from app.services.shift_service import ShiftService
 router=APIRouter(prefix='/shifts',tags=['Plantões'])
 def safe(item,request):
  data=ShiftResponse.model_validate(item)
- return data.model_copy(update={'gross_value':0,'estimated_net_value':0,'payment_method':None,'expected_payment_date':None}) if getattr(request.state,'is_assistant',False) else data
+ return data.model_copy(update={'gross_value':0,'estimated_net_value':0,'tax_reserve_percentage':None,'payment_method':None,'expected_payment_date':None}) if getattr(request.state,'is_assistant',False) else data
 @router.get('',response_model=ShiftPage)
 def list_shifts(request:Request,page:int=Query(1,ge=1),page_size:int=Query(10,ge=1,le=100),search:str|None=None,contractor_id:uuid.UUID|None=None,city:str|None=None,specialty:str|None=None,status:str|None=None,type:str|None=None,date_from:date|None=None,date_to:date|None=None,min_value:Decimal|None=None,max_value:Decimal|None=None,order:str='recent',user:User=Depends(operational_user),db:Session=Depends(get_db)):
  items,total=ShiftService(db).list(user.id,page,page_size,locals());return {'items':[safe(x,request) for x in items],'total':total,'page':page,'page_size':page_size}

@@ -1,7 +1,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from sqlalchemy import Date, DateTime, ForeignKey, Numeric, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database.session import Base
 
@@ -28,6 +28,17 @@ class TaxSetting(Base):
     __table_args__ = (UniqueConstraint('user_id', name='uq_tax_settings_user'),)
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('users.id'), index=True)
-    default_percentage: Mapped[Decimal] = mapped_column(Numeric(6,3), default=18)
+    default_percentage: Mapped[Decimal] = mapped_column(Numeric(6,3), default=15)
+    simples_nacional: Mapped[bool|None] = mapped_column(Boolean)
+    simples_annex: Mapped[str] = mapped_column(String(10), default='UNKNOWN')
+    fator_r: Mapped[Decimal|None] = mapped_column(Numeric(6,3))
+    rbt12: Mapped[Decimal|None] = mapped_column(Numeric(14,2))
+    das_effective_percentage: Mapped[Decimal|None] = mapped_column(Numeric(6,3))
+    iss_effective_percentage: Mapped[Decimal|None] = mapped_column(Numeric(6,3))
+    has_separate_darfs: Mapped[bool] = mapped_column(Boolean, default=False)
+    separate_darfs_json: Mapped[str|None] = mapped_column(Text)
+    recommended_reserve_percentage: Mapped[Decimal] = mapped_column(Numeric(6,3), default=15)
+    effective_from: Mapped[date|None] = mapped_column(Date)
+    accountant_notes: Mapped[str|None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

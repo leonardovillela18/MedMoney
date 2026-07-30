@@ -4,7 +4,9 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 ARG VITE_API_URL=/api/v1
+ARG VITE_SESSION_IDLE_TIMEOUT_MINUTES=15
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SESSION_IDLE_TIMEOUT_MINUTES=$VITE_SESSION_IDLE_TIMEOUT_MINUTES
 RUN npm run build
 FROM nginx:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf

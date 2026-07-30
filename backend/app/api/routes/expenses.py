@@ -37,5 +37,7 @@ def get_expense(id:uuid.UUID,user:User=Depends(current_user),db:Session=Depends(
 def create_expense(payload:ExpenseInput,user:User=Depends(current_user),db:Session=Depends(get_db)):return ExpenseService(db).create(user.id,payload.model_dump())
 @router.put('/{id}',response_model=ExpenseResponse)
 def update_expense(id:uuid.UUID,payload:ExpenseInput,user:User=Depends(current_user),db:Session=Depends(get_db)):return ExpenseService(db).update(user.id,id,payload.model_dump())
+@router.post('/{id}/pay',response_model=ExpenseResponse)
+def mark_expense_paid(id:uuid.UUID,payment_date:date|None=None,user:User=Depends(current_user),db:Session=Depends(get_db)):return ExpenseService(db).mark_paid(user.id,id,payment_date)
 @router.delete('/{id}',status_code=204)
 def delete_expense(id:uuid.UUID,user:User=Depends(current_user),db:Session=Depends(get_db)):ExpenseService(db).delete(user.id,id);return Response(status_code=204)

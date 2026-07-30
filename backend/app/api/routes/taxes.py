@@ -18,10 +18,10 @@ def create_tax(payload:TaxInput,user:User=Depends(current_user),db:Session=Depen
 def tax_dashboard(user:User=Depends(current_user),db:Session=Depends(get_db)):return TaxService(db).dashboard(user.id)
 @router.post('/simulate')
 def simulate(payload:SimulationInput,user:User=Depends(current_user),db:Session=Depends(get_db)):
-    reserve=TaxService.estimated(payload.receita,payload.percentual);return {'receita':float(payload.receita),'percentual':float(payload.percentual),'reserva_sugerida':float(reserve),'lucro_liquido_estimado':float(payload.receita-reserve),'disclaimer':'Simulação informativa. Não representa cálculo tributário oficial.'}
+    reserve,available=TaxService.calculate_reserve(payload.receita,payload.percentual);return {'receita':float(payload.receita),'percentual':float(payload.percentual),'reserva_sugerida':float(reserve),'disponivel_apos_reserva':float(available),'disclaimer':'Simulação informativa para planejamento. Não representa apuração tributária oficial.'}
 @router.get('/settings')
 def settings(user:User=Depends(current_user),db:Session=Depends(get_db)):return TaxService(db).setting(user.id)
 @router.put('/settings')
-def update_settings(payload:SettingInput,user:User=Depends(current_user),db:Session=Depends(get_db)):return TaxService(db).save_setting(user.id,payload.default_percentage)
+def update_settings(payload:SettingInput,user:User=Depends(current_user),db:Session=Depends(get_db)):return TaxService(db).save_setting(user.id,payload.model_dump())
 @router.put('/{tax_id}',response_model=TaxResponse)
 def update_tax(tax_id:uuid.UUID,payload:TaxUpdate,user:User=Depends(current_user),db:Session=Depends(get_db)):return TaxService(db).update(user.id,tax_id,payload.model_dump())

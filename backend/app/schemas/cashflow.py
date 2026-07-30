@@ -3,7 +3,7 @@ from decimal import Decimal
 import uuid
 from pydantic import BaseModel,Field
 class CashflowResponse(BaseModel):
- id:uuid.UUID;data:date;tipo:str;origem:str;origem_id:uuid.UUID;descricao:str;categoria:str;valor:Decimal;saldo_projetado:Decimal;status:str;created_at:datetime;updated_at:datetime
+ id:uuid.UUID;data:date;tipo:str;origem:str;origem_id:uuid.UUID;descricao:str;categoria:str;valor:Decimal;saldo_projetado:Decimal;status:str;account_id:uuid.UUID|None=None;transaction_type:str='OPERATING';direction:str='INFLOW';notes:str|None=None;created_at:datetime;updated_at:datetime
  model_config={'from_attributes':True}
 class CashflowPage(BaseModel):items:list[CashflowResponse];total:int;page:int;page_size:int
 class CashflowSimulation(BaseModel):

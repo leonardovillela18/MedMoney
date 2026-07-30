@@ -25,6 +25,8 @@ import { SurgeryDetailPage } from '@/pages/surgeries/SurgeryDetailPage'
 import { UsersPage } from '@/pages/admin/UsersPage'
 import { AssistantsPage } from '@/pages/assistants/AssistantsPage'
 import { ConsultationsPage } from '@/pages/consultations/ConsultationsPage'
+import { RecurringIncomesPage } from '@/pages/recurringIncomes/RecurringIncomesPage'
+import { FinancialPage } from '@/pages/financial/FinancialPage'
 const TaxesPage = lazy(() =>
   import('@/pages/taxes/TaxesPage').then((x) => ({ default: x.TaxesPage }))
 )
@@ -59,28 +61,40 @@ const ExpenseReportsPage = lazy(() =>
   }))
 )
 const InsightsPage = lazy(() =>
-  import('@/pages/insights/InsightsPage').then((x) => ({ default: x.InsightsPage }))
+  import('@/pages/insights/InsightsPage').then((x) => ({
+    default: x.InsightsPage,
+  }))
 )
 const InsightDetailPage = lazy(() =>
-  import('@/pages/insights/InsightDetailPage').then((x) => ({ default: x.InsightDetailPage }))
+  import('@/pages/insights/InsightDetailPage').then((x) => ({
+    default: x.InsightDetailPage,
+  }))
 )
 const AnalyticsPage = lazy(() =>
-  import('@/pages/analytics/AnalyticsPage').then((x) => ({ default: x.AnalyticsPage }))
+  import('@/pages/analytics/AnalyticsPage').then((x) => ({
+    default: x.AnalyticsPage,
+  }))
 )
 const GoalsPage = lazy(() =>
   import('@/pages/goals/GoalsPage').then((x) => ({ default: x.GoalsPage }))
 )
 const GoalFormPage = lazy(() =>
-  import('@/pages/goals/GoalFormPage').then((x) => ({ default: x.GoalFormPage }))
+  import('@/pages/goals/GoalFormPage').then((x) => ({
+    default: x.GoalFormPage,
+  }))
 )
 const GoalDetailPage = lazy(() =>
-  import('@/pages/goals/GoalDetailPage').then((x) => ({ default: x.GoalDetailPage }))
+  import('@/pages/goals/GoalDetailPage').then((x) => ({
+    default: x.GoalDetailPage,
+  }))
 )
 const AlertsPage = lazy(() =>
   import('@/pages/alerts/AlertsPage').then((x) => ({ default: x.AlertsPage }))
 )
 const AlertDetailPage = lazy(() =>
-  import('@/pages/alerts/AlertDetailPage').then((x) => ({ default: x.AlertDetailPage }))
+  import('@/pages/alerts/AlertDetailPage').then((x) => ({
+    default: x.AlertDetailPage,
+  }))
 )
 function Private({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -92,8 +106,20 @@ function Guest({ children }: { children: React.ReactNode }) {
   if (loading) return <FullPageLoader />
   return user ? <Navigate to="/dashboard" replace /> : <>{children}</>
 }
-function AdminOnly({children}:{children:React.ReactNode}){const{user,loading}=useAuth();if(loading)return <FullPageLoader/>;return user?.is_admin?<>{children}</>:<Navigate to="/dashboard" replace/>}
-function DoctorOnly({children}:{children:React.ReactNode}){const{user,loading}=useAuth();if(loading)return <FullPageLoader/>;return !user?.is_assistant?<>{children}</>:<Navigate to="/dashboard" replace/>}
+function AdminOnly({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return <FullPageLoader />
+  return user?.is_admin ? <>{children}</> : <Navigate to="/dashboard" replace />
+}
+function DoctorOnly({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return <FullPageLoader />
+  return !user?.is_assistant ? (
+    <>{children}</>
+  ) : (
+    <Navigate to="/dashboard" replace />
+  )
+}
 const lazyPage = (page: React.ReactNode) => (
   <Suspense fallback={<FullPageLoader />}>{page}</Suspense>
 )
@@ -140,8 +166,24 @@ export function App() {
         <Route path="/plantoes/:id/editar" element={<ShiftFormPage />} />
         <Route path="/consultas" element={<ConsultationsPage />} />
         <Route path="/consultas/nova" element={<ShiftFormPage />} />
+        <Route
+          path="/recebimentos-recorrentes"
+          element={
+            <DoctorOnly>
+              <RecurringIncomesPage />
+            </DoctorOnly>
+          }
+        />
         <Route path="/impostos" element={lazyPage(<TaxesPage />)} />
         <Route path="/fluxo-de-caixa" element={lazyPage(<CashflowPage />)} />
+        <Route
+          path="/financeiro"
+          element={
+            <DoctorOnly>
+              <FinancialPage />
+            </DoctorOnly>
+          }
+        />
         <Route path="/despesas" element={lazyPage(<ExpensesPage />)} />
         <Route path="/despesas/nova" element={lazyPage(<ExpenseFormPage />)} />
         <Route
@@ -167,18 +209,28 @@ export function App() {
         <Route path="/alertas" element={lazyPage(<AlertsPage />)} />
         <Route path="/alertas/:id" element={lazyPage(<AlertDetailPage />)} />
         <Route path="/configuracoes" element={<SettingsPage />} />
-        <Route path="/usuarios" element={<AdminOnly><UsersPage /></AdminOnly>} />
-        <Route path="/auxiliares" element={<DoctorOnly><AssistantsPage /></DoctorOnly>} />
+        <Route
+          path="/usuarios"
+          element={
+            <AdminOnly>
+              <UsersPage />
+            </AdminOnly>
+          }
+        />
+        <Route
+          path="/auxiliares"
+          element={
+            <DoctorOnly>
+              <AssistantsPage />
+            </DoctorOnly>
+          }
+        />
         <Route path="/calendario" element={<CalendarPage />} />
         <Route path="/cirurgias" element={<SurgeriesPage />} />
         <Route path="/cirurgias/nova" element={<SurgeryFormPage />} />
         <Route path="/cirurgias/:id" element={<SurgeryDetailPage />} />
         <Route path="/cirurgias/:id/editar" element={<SurgeryFormPage />} />
-        {[
-          'financeiro',
-          'notas-fiscais',
-          'perfil',
-        ].map((p) => (
+        {['notas-fiscais', 'perfil'].map((p) => (
           <Route key={p} path={'/' + p} element={<ComingSoonPage />} />
         ))}
       </Route>

@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 from pydantic import BaseModel, Field
 
 TYPES={'ISS','IRPJ','CSLL','PIS','COFINS','INSS','Outro'}
@@ -15,4 +16,15 @@ class TaxResponse(TaxInput):
     model_config={'from_attributes':True}
 class TaxPage(BaseModel):items:list[TaxResponse];total:int;page:int;page_size:int
 class SimulationInput(BaseModel):receita:Decimal=Field(ge=0);percentual:Decimal=Field(ge=0,le=100)
-class SettingInput(BaseModel):default_percentage:Decimal=Field(ge=0,le=100)
+class SettingInput(BaseModel):
+    simples_nacional:bool|None=None
+    simples_annex:Literal['III','V','OTHER','UNKNOWN']='UNKNOWN'
+    fator_r:Decimal|None=Field(None,ge=0,le=100)
+    rbt12:Decimal|None=Field(None,ge=0)
+    das_effective_percentage:Decimal|None=Field(None,ge=0,le=100)
+    iss_effective_percentage:Decimal|None=Field(None,ge=0,le=100)
+    has_separate_darfs:bool=False
+    separate_darfs:list[Literal['IRRF','INSS','CSLL','PIS','COFINS','OUTRO']]=Field(default_factory=list)
+    recommended_reserve_percentage:Decimal=Field(default=15,ge=0,le=100)
+    effective_from:date|None=None
+    accountant_notes:str|None=Field(None,max_length=4000)

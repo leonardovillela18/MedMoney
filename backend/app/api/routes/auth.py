@@ -1,4 +1,4 @@
-import uuid
+import logging,uuid
 from datetime import datetime,timezone
 from fastapi import APIRouter,Depends,HTTPException,Request,Response,status
 from slowapi import Limiter
@@ -11,9 +11,9 @@ from app.core.config import get_settings
 from app.database.session import get_db
 from app.models.enterprise import Role,UserRole
 from app.models.user import AssistantLink,RefreshToken,User
-from app.schemas.auth import ForgotPasswordRequest,LoginRequest,LogoutRequest,RefreshRequest,RegisterRequest,ResetPasswordRequest,SessionResponse,TokenResponse,UserResponse
+from app.schemas.auth import ChangePasswordRequest,ForgotPasswordRequest,LoginRequest,LogoutRequest,PublicMessage,RefreshRequest,RegisterRequest,ResetPasswordRequest,SessionResponse,TokenResponse,UserResponse
 from app.services.audit_service import AuditService
-from app.services.password_reset import request_password_reset
+from app.services.password_reset import GENERIC_MESSAGE,request_password_reset,reset_password as complete_password_reset
 router=APIRouter(prefix='/auth',tags=['Autenticação']);limiter=Limiter(key_func=get_remote_address)
 settings=get_settings()
 DEV_ADMIN_EMAIL='admin@crmoney.com'
@@ -43,8 +43,9 @@ def register(request:Request,payload:RegisterRequest,db:Session=Depends(get_db))
 @limiter.limit('5/minute')
 def login(request:Request,payload:LoginRequest,db:Session=Depends(get_db)):
  user=ensure_development_admin(payload,db) or db.scalar(select(User).where(User.email==payload.email.lower(),User.deleted_at.is_(None)))
- if not user or not verify_password(payload.password,user.password_hash):raise HTTPException(401,'E-mail ou senha incorretos.')
- AuditService.record(db,'LOGIN','Session',user.id,None,request);return tokens_for(user,db,request)
+ if not user or not verify_password(payload.password,user.password_hash):
+  AuditService.record(db,'LOGIN_FAILED','Session',user.id if user else None,None,request);raise HTTPException(401,'E-mail ou senha incorretos.')
+ AuditService.record(db,'LOGIN_SUCCESS','Session',user.id,None,request);return tokens_for(user,db,request)
 @router.post('/refresh',response_model=TokenResponse)
 @limiter.limit('20/minute')
 def refresh(request:Request,payload:RefreshRequest,db:Session=Depends(get_db)):
@@ -58,6 +59,7 @@ def refresh(request:Request,payload:RefreshRequest,db:Session=Depends(get_db)):
   raise HTTPException(401,'Sessão expirada ou revogada.')
  record.revoked_at=now;record.last_used_at=now;db.commit();user=db.get(User,record.user_id)
  if not user or user.deleted_at:raise HTTPException(401,'Sessão inválida.')
+ AuditService.record(db,'REFRESH_TOKEN_REVOKED','Session',user.id,record.id,request)
  return tokens_for(user,db,request,record.id)
 @router.get('/me',response_model=UserResponse)
 def me(user:User=Depends(current_user),db:Session=Depends(get_db)):
@@ -67,13 +69,13 @@ def me(user:User=Depends(current_user),db:Session=Depends(get_db)):
 @router.post('/logout',status_code=204)
 def logout(request:Request,payload:LogoutRequest,db:Session=Depends(get_db)):
  record=db.scalar(select(RefreshToken).where(RefreshToken.token_hash==hash_token(payload.refresh_token)))
- if record and not record.revoked_at:record.revoked_at=datetime.now(timezone.utc);db.commit();AuditService.record(db,'LOGOUT','Session',record.user_id,record.id,request)
+ if record and not record.revoked_at:record.revoked_at=datetime.now(timezone.utc);db.commit();AuditService.record(db,'SESSION_IDLE_LOGOUT' if payload.reason=='idle' else 'LOGOUT','Session',record.user_id,record.id,request)
  return Response(status_code=204)
 @router.post('/logout-all',status_code=204)
 def logout_all(request:Request,user:User=Depends(current_user),db:Session=Depends(get_db)):
  now=datetime.now(timezone.utc)
  for item in db.scalars(select(RefreshToken).where(RefreshToken.user_id==user.id,RefreshToken.revoked_at.is_(None))):item.revoked_at=now
- db.commit();AuditService.record(db,'LOGOUT_ALL','Session',user.id,None,request);return Response(status_code=204)
+ db.commit();AuditService.record(db,'LOGOUT_ALL_SESSIONS','Session',user.id,None,request);return Response(status_code=204)
 @router.get('/sessions',response_model=list[SessionResponse])
 def sessions(user:User=Depends(current_user),db:Session=Depends(get_db)):
  items=db.scalars(select(RefreshToken).where(RefreshToken.user_id==user.id,RefreshToken.revoked_at.is_(None),RefreshToken.expires_at>datetime.now(timezone.utc)).order_by(RefreshToken.created_at.desc()));return [SessionResponse(id=str(x.id),ip_address=x.ip_address,user_agent=x.user_agent,session_name=x.session_name,last_used_at=x.last_used_at.isoformat() if x.last_used_at else None,expires_at=x.expires_at.isoformat()) for x in items]
@@ -82,10 +84,20 @@ def revoke_session(session_id:uuid.UUID,request:Request,user:User=Depends(curren
  item=db.scalar(select(RefreshToken).where(RefreshToken.id==session_id,RefreshToken.user_id==user.id))
  if not item:raise HTTPException(404,'Sessão não encontrada.')
  item.revoked_at=datetime.now(timezone.utc);db.commit();AuditService.record(db,'REVOKE_SESSION','Session',user.id,item.id,request);return Response(status_code=204)
-@router.post('/forgot-password',status_code=204)
-def forgot_password(payload:ForgotPasswordRequest,db:Session=Depends(get_db)):
+@router.post('/forgot-password',response_model=PublicMessage)
+@limiter.limit('3/minute')
+def forgot_password(request:Request,payload:ForgotPasswordRequest,db:Session=Depends(get_db)):
  user=db.scalar(select(User).where(User.email==payload.email.lower(),User.deleted_at.is_(None)))
- if user:request_password_reset(user)
- return None
+ if user:
+  try:request_password_reset(db,user,request)
+  except Exception:logging.getLogger('crmoney.email').exception('Password reset delivery failed')
+ return PublicMessage(message=GENERIC_MESSAGE)
 @router.post('/reset-password',status_code=204)
-def reset_password(_:ResetPasswordRequest):return None
+def reset_password(request:Request,payload:ResetPasswordRequest,db:Session=Depends(get_db)):
+ complete_password_reset(db,payload.token,payload.password,request);return Response(status_code=204)
+@router.post('/change-password',status_code=204)
+def change_password(request:Request,payload:ChangePasswordRequest,user:User=Depends(current_user),db:Session=Depends(get_db)):
+ if not verify_password(payload.current_password,user.password_hash):raise HTTPException(422,'Senha atual incorreta.')
+ user.password_hash=hash_password(payload.new_password);now=datetime.now(timezone.utc)
+ for item in db.scalars(select(RefreshToken).where(RefreshToken.user_id==user.id,RefreshToken.revoked_at.is_(None))):item.revoked_at=now
+ db.commit();AuditService.record(db,'PASSWORD_CHANGED','User',user.id,user.id,request);return Response(status_code=204)

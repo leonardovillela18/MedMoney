@@ -21,6 +21,17 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-crmoney}:${POSTGRES_PASSWORD:-crmoney_dev}@db:5432/${POSTGRES_DB:-crmoney}
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-development-only-change-me}
+      SESSION_IDLE_TIMEOUT_MINUTES: ${SESSION_IDLE_TIMEOUT_MINUTES:-15}
+      PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: ${PASSWORD_RESET_TOKEN_EXPIRE_MINUTES:-30}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-CRMoney}
+      SMTP_USE_TLS: ${SMTP_USE_TLS:-true}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8082}
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:8082}
       TRUSTED_HOSTS: ${TRUSTED_HOSTS:-localhost,127.0.0.1,backend}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
@@ -29,7 +40,7 @@ services:
     depends_on: {db: {condition: service_healthy}, redis: {condition: service_healthy}}
     ports: ["8000:8000"]
   frontend:
-    build: {context: ./frontend, args: {VITE_API_URL: /api/v1}}
+    build: {context: ./frontend, args: {VITE_API_URL: /api/v1, VITE_SESSION_IDLE_TIMEOUT_MINUTES: ${SESSION_IDLE_TIMEOUT_MINUTES:-15}}}
     depends_on: [backend]
     ports: ["8082:80"]
 volumes: {postgres_data: {}, redis_data: {}, uploads: {}}

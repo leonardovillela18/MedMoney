@@ -28,7 +28,7 @@ class TodayService:
   cash=CashflowService(self.db).projection(user.id);alerts=list(cash['alerts']);actions=[]
   if self.db.scalar(select(func.count()).select_from(Invoice).where(Invoice.user_id==user.id,Invoice.status=='Pendente',Invoice.deleted_at.is_(None))):actions.append({'label':'Emitir ou revisar Nota Fiscal','href':'/notas-fiscais'})
   if any(x.expected_date<=today for x in payments):actions.append({'label':'Registrar recebimento pendente','href':'/financeiro'})
-  if not self.db.scalar(select(func.count()).select_from(Expense).where(Expense.user_id==user.id,Expense.competencia>=month,Expense.deleted_at.is_(None))):actions.append({'label':'Cadastrar despesas do mês','href':'/despesas/nova'})
+  if not self.db.scalar(select(func.count()).select_from(Expense).where(Expense.user_id==user.id,Expense.competencia>=month,Expense.competencia<end,Expense.deleted_at.is_(None))):actions.append({'label':'Cadastrar despesas do mês','href':'/despesas/nova'})
   if reserved<taxes:alerts.append('A reserva tributária está abaixo da estimativa do mês.');actions.append({'label':'Revisar reserva tributária','href':'/impostos'})
   alerts=alerts[:5];insights=self.insights(user.id,received,prev_start,month,month_shifts,contractors,net);activity=self.activity(user.id);calendar=self.calendar(future_shifts,payments,user.id,today)
   goal_value=self.sum(Receivable.received_value,*active_rec,Receivable.received_date>=prev_start,Receivable.received_date<month);goal_value=goal_value or received;progress=float(received/goal_value*100) if goal_value else 0

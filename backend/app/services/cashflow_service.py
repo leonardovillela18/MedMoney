@@ -12,17 +12,21 @@ INFLOWS={'Receita Prevista','Receita Recebida'}
 class CashflowService:
  """Read-only financial forecast derived from domain events; never accepts manual ledger entries."""
  def __init__(self,db:Session):self.db=db;self.repo=CashflowRepository(db)
+ @staticmethod
+ def revenue_split(receivables):
+  pj=sum((x.expected_value for x in receivables if x.tax_treatment!='NON_PJ'),Decimal(0));non_pj=sum((x.expected_value for x in receivables if x.tax_treatment=='NON_PJ'),Decimal(0));return pj,non_pj
  def sync_source(self,user,origin,origin_id,when,kind,description,category,value,status='Previsto'):
   x=self.repo.source(user,origin,origin_id)
   if not x:x=CashflowProjection(user_id=user,origem=origin,origem_id=origin_id);self.db.add(x)
-  x.data=when;x.tipo=kind;x.descricao=description;x.categoria=category;x.valor=Decimal(value);x.status=status;self.db.flush();return x
+  x.data=when;x.tipo=kind;x.descricao=description;x.categoria=category;x.valor=Decimal(value);x.status=status;x.direction='OUTFLOW' if x.valor<0 else 'INFLOW';x.transaction_type='RESERVE' if kind=='Reserva Tributária' else 'OPERATING';self.db.flush();return x
  def reconcile(self,user):
   shifts=self.db.scalars(select(Shift).where(Shift.user_id==user,Shift.deleted_at.is_(None)))
-  for x in shifts:self.sync_source(user,'Plantão',x.id,x.expected_payment_date or x.date,'Receita Prevista',x.title or x.type,'Plantões',x.gross_value,'Previsto')
-  receivables=self.db.scalars(select(Receivable).where(Receivable.user_id==user,Receivable.deleted_at.is_(None),Receivable.received_value>0))
-  for x in receivables:self.sync_source(user,'Plantão',x.shift_id,x.received_date or x.expected_date,'Receita Recebida','Recebimento de plantão','Recebimentos',x.received_value,'Confirmado')
+  for x in shifts:
+   receivable=self.db.scalar(select(Receivable).where(Receivable.user_id==user,Receivable.shift_id==x.id,Receivable.deleted_at.is_(None)))
+   if receivable and receivable.received_value>0:self.sync_source(user,'Plantão',x.id,receivable.received_date or receivable.expected_date,'Receita Recebida',x.title or x.type,'Recebimentos',receivable.received_value,'Confirmado')
+   else:self.sync_source(user,'Plantão',x.id,x.expected_payment_date or x.date,'Receita Prevista',x.title or x.type,'Plantões',x.gross_value,'Cancelado' if x.status=='Cancelado' else 'Previsto')
   taxes=self.db.scalars(select(TaxEstimation).where(TaxEstimation.user_id==user,TaxEstimation.deleted_at.is_(None),TaxEstimation.status.in_(['Reservado','Pago'])))
-  for x in taxes:self.sync_source(user,'Reserva Tributária',x.id,x.competencia,'Reserva Tributária',f'Reserva sugerida — {x.tipo}','Impostos',-abs(x.valor_estimado),'Confirmado')
+  for x in taxes:self.sync_source(user,'Reserva Tributária',x.id,x.competencia,'Reserva Tributária',f'Reserva efetivamente separada — {x.tipo}','Impostos',-abs(x.valor_estimado),'Confirmado')
   self.db.commit();self.recalculate(user)
  def recalculate(self,user):
   items=list(self.db.scalars(self.repo.query(user,{})));balance=Decimal(0)
@@ -32,14 +36,18 @@ class CashflowService:
   self.db.commit();return items
  def list(self,user,page,size,filters):self.reconcile(user);return self.repo.list(user,page,size,filters)
  def projection(self,user,days=180):
-  self.reconcile(user);today=date.today();items=list(self.db.scalars(self.repo.query(user,{'date_to':today+timedelta(days=days)})));current=sum((x.valor for x in items if x.data<=today and x.status=='Confirmado'),Decimal(0));month=today.replace(day=1);month_items=[x for x in items if x.data>=month and x.data<(month.replace(year=month.year+(month.month==12),month=1 if month.month==12 else month.month+1))]
-  incoming=sum((x.valor for x in month_items if x.tipo in INFLOWS),Decimal(0));outgoing=-sum((x.valor for x in month_items if x.tipo not in INFLOWS),Decimal(0));reserved=-sum((x.valor for x in items if x.tipo=='Reserva Tributária'),Decimal(0));future=sum((x.valor for x in items if x.data<=today+timedelta(days=days) and x.status!='Cancelado'),Decimal(0));negative=next((x for x in items if x.saldo_projetado<0 and x.data>=today),None)
-  horizons=[7,15,30,60,90,180];forecasts=[{'days':d,'balance':float(sum((x.valor for x in items if x.data<=today+timedelta(days=d) and x.status!='Cancelado'),Decimal(0)))} for d in horizons]
+  self.reconcile(user);today=date.today();items=list(self.db.scalars(self.repo.query(user,{'date_to':today+timedelta(days=days)})));operational=[x for x in items if x.transaction_type not in ('TRANSFER','RESERVE')];current=sum((x.valor for x in operational if x.status=='Confirmado'),Decimal(0));month=today.replace(day=1);next_month=month.replace(year=month.year+(month.month==12),month=1 if month.month==12 else month.month+1);month_items=[x for x in operational if month<=x.data<next_month and x.status=='Confirmado']
+  incoming=sum((x.valor for x in month_items if x.valor>0),Decimal(0));outgoing=-sum((x.valor for x in month_items if x.valor<0),Decimal(0));reserved=-sum((x.valor for x in items if x.transaction_type=='RESERVE' and x.status=='Confirmado'),Decimal(0));future=current+sum((x.valor for x in operational if x.status=='Previsto' and x.data<=today+timedelta(days=days)),Decimal(0));negative=next((x for x in items if x.saldo_projetado<0 and x.data>=today),None)
+  horizons=[7,15,30,60,90,180];forecasts=[{'days':d,'balance':float(current+sum((x.valor for x in operational if x.status=='Previsto' and x.data<=today+timedelta(days=d)),Decimal(0)))} for d in horizons]
   daily={}
-  for x in items:
-   b=daily.setdefault(str(x.data),{'inflow':Decimal(0),'outflow':Decimal(0),'balance':x.saldo_projetado});b['inflow' if x.valor>=0 else 'outflow']+=abs(x.valor);b['balance']=x.saldo_projetado
+  running=Decimal(0)
+  for x in operational:
+   if x.status=='Cancelado':continue
+   running+=x.valor
+   b=daily.setdefault(str(x.data),{'inflow':Decimal(0),'outflow':Decimal(0),'balance':running});b['inflow' if x.valor>=0 else 'outflow']+=abs(x.valor);b['balance']=running
   insights=[f'Você ficará com saldo negativo em {(negative.data-today).days} dias.' if negative else 'Seu fluxo projetado permanece positivo no período analisado.']
-  return {'summary':{'current_balance':float(current),'forecast_balance':float(future),'month_inflows':float(incoming),'month_outflows':float(outgoing),'net_result':float(incoming-outgoing),'tax_reserve':float(reserved),'available':float(future)},'forecasts':forecasts,'series':[{'date':k,**{n:float(v) for n,v in b.items()}} for k,b in daily.items()],'insights':insights,'alerts':self.alerts(user,items,today)}
+  receivables=list(self.db.scalars(select(Receivable).where(Receivable.user_id==user,Receivable.deleted_at.is_(None),Receivable.competence>=month,Receivable.competence<next_month,Receivable.status!='Cancelado')));pj,non_pj=self.revenue_split(receivables)
+  return {'summary':{'current_balance':float(current),'forecast_balance':float(future),'month_inflows':float(incoming),'month_outflows':float(outgoing),'net_result':float(incoming-outgoing),'tax_reserve':float(reserved),'available':float(current-reserved),'total_revenue_month':float(pj+non_pj),'pj_revenue_month':float(pj),'non_pj_revenue_month':float(non_pj)},'forecasts':forecasts,'series':[{'date':k,**{n:float(v) for n,v in b.items()}} for k,b in daily.items()],'insights':insights,'alerts':self.alerts(user,items,today)}
  def alerts(self,user,items,today):
   alerts=[]
   if any(x.saldo_projetado<0 and x.data>=today for x in items):alerts.append('Alerta de saldo projetado negativo.')

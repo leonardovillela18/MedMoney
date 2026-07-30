@@ -7,7 +7,7 @@ import re
 ContractorType=Literal['Hospital','Clínica','UPA','Santa Casa','Consultório','Prefeitura','Cooperativa','Empresa','Plano de Saúde','Outro']
 class ContractorBase(BaseModel):
     name:str=Field(min_length=2,max_length=160); type:ContractorType; cnpj:str|None=None; email:EmailStr|None=None; phone:str|None=None; mobile:str|None=None; site:str|None=None
-    zip_code:str|None=None; street:str|None=None; number:str|None=None; neighborhood:str|None=None; city:str|None=None; state:str|None=None; complement:str|None=None
+    zip_code:str|None=None; street:str|None=None; number:str|None=None; neighborhood:str|None=None; city:str|None=None;city_ibge_code:str|None=Field(None,min_length=7,max_length=7);state:str|None=None; complement:str|None=None
     primary_contact:str|None=None; contact_role:str|None=None; contact_phone:str|None=None; contact_email:EmailStr|None=None; payment_day:str|None=None; payment_term_days:int|None=Field(default=None,gt=0); default_shift_value:Decimal|None=Field(default=None,ge=0); notes:str|None=Field(default=None,max_length=2000); active:bool=True
     @field_validator('cnpj')
     @classmethod

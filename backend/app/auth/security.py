@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import hashlib, secrets, jwt
+import re
 from passlib.context import CryptContext
 from app.core.config import get_settings
 pwd_context=CryptContext(schemes=['bcrypt'],deprecated='auto'); settings=get_settings()
@@ -13,3 +14,6 @@ def decode_access_token(token:str)->str:
     if payload.get('type')!='access' or not payload.get('sub'): raise jwt.InvalidTokenError
     return payload['sub']
 def hash_token(token:str)->str:return hashlib.sha256(token.encode()).hexdigest()
+def validate_password_strength(value:str)->str:
+    if len(value)<8 or len(value)>128 or not re.search('[A-Z]',value) or not re.search('[0-9]',value) or not re.search('[^A-Za-z0-9]',value):raise ValueError('A senha não atende aos requisitos de segurança.')
+    return value
