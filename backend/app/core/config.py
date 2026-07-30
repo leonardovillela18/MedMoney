@@ -36,8 +36,6 @@ class Settings(BaseSettings):
     def secure_production(self):
         if self.environment == 'production' and (self.jwt_secret_key == 'development-only-change-me' or len(self.jwt_secret_key)<32): raise ValueError('JWT_SECRET_KEY must be a strong secret in production')
         if self.environment == 'production' and self.enable_docs: raise ValueError('ENABLE_DOCS must be false in production')
-        if self.environment == 'production' and self.email_provider != 'smtp': raise ValueError('EMAIL_PROVIDER must be smtp in production')
-        if self.environment == 'production' and not all((self.smtp_host,self.smtp_user,self.smtp_password,self.smtp_from)): raise ValueError('SMTP configuration is required in production')
         return self
 
 @lru_cache

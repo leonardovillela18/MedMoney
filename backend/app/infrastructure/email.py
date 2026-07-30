@@ -11,6 +11,11 @@ class ConsoleEmailProvider:
         logging.getLogger('crmoney.email').info('Password reset email captured for development recipient=%s', recipient)
 
 
+class UnconfiguredEmailProvider:
+    def send_password_reset(self, recipient: str, link: str, expires_minutes: int) -> None:
+        raise RuntimeError('Password reset email provider is not configured for production')
+
+
 class SMTPEmailProvider:
     def __init__(self): self.settings = get_settings()
     def send_password_reset(self, recipient: str, link: str, expires_minutes: int) -> None:
@@ -24,4 +29,11 @@ class SMTPEmailProvider:
 
 
 def get_email_provider():
-    return SMTPEmailProvider() if get_settings().email_provider == 'smtp' else ConsoleEmailProvider()
+    settings = get_settings()
+    if settings.email_provider == 'smtp':
+        if not all((settings.smtp_host, settings.smtp_user, settings.smtp_password, settings.smtp_from)):
+            return UnconfiguredEmailProvider()
+        return SMTPEmailProvider()
+    if settings.environment == 'production':
+        return UnconfiguredEmailProvider()
+    return ConsoleEmailProvider()
