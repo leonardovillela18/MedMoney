@@ -1,9 +1,14 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, Plus, Stethoscope } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { shiftsService } from '@/services/shifts'
 import { Button } from '@/components/ui/Button'
 export function ConsultationsPage() {
+  const queryClient = useQueryClient()
+  const remove = useMutation({
+    mutationFn: shiftsService.remove,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['consultations'] }),
+  })
   const { data, isLoading } = useQuery({
     queryKey: ['consultations'],
     queryFn: () =>
@@ -70,6 +75,15 @@ export function ConsultationsPage() {
                   >
                     Editar
                   </Link>
+                  <button
+                    className="text-red-600"
+                    disabled={remove.isPending}
+                    onClick={() => {
+                      if (window.confirm('Excluir consulta?')) remove.mutate(x.id)
+                    }}
+                  >
+                    Excluir
+                  </button>
                 </div>
               </div>
             ))}

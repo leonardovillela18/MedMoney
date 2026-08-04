@@ -24,9 +24,11 @@ import {
 import { Navigate, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useEffect, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertBadge } from '@/components/alerts/AlertBadge'
 import { alertsService } from '@/services/alerts'
+import { expensesService } from '@/services/expenses'
+import { receivablesService } from '@/services/receivables'
 import { cn } from '@/lib/utils'
 
 type GroupId = 'servico' | 'administrativo' | 'gerenciamento'
@@ -99,6 +101,29 @@ export function AppLayout() {
     'account' | 'notifications' | null
   >(null)
   const [criticalToast, setCriticalToast] = useState(false)
+  const queryClient = useQueryClient()
+  const payExpense = useMutation({
+    mutationFn: (id: string) => expensesService.pay(id),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['alerts-dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['today'] }),
+        queryClient.invalidateQueries({ queryKey: ['expenses'] }),
+        queryClient.invalidateQueries({ queryKey: ['financial-dashboard'] }),
+      ])
+    },
+  })
+  const confirmReceipt = useMutation({
+    mutationFn: receivablesService.confirm,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['alerts-dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['today'] }),
+        queryClient.invalidateQueries({ queryKey: ['financial-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['recurring-income-occurrences'] }),
+      ])
+    },
+  })
   const assistantAllowed = [
     '/dashboard',
     '/consultas',
@@ -311,21 +336,26 @@ export function AppLayout() {
                   </div>
                   <div className="max-h-72 overflow-y-auto py-2">
                     {alerts.data?.highlights.length ? (
-                      alerts.data.highlights.slice(0, 4).map((alert) => (
-                        <NavLink
-                          key={alert.id}
-                          to={alert.url_destino || `/alertas/${alert.id}`}
-                          onClick={() => setHeaderPanel(null)}
-                          className="block rounded-lg px-3 py-2.5 hover:bg-slate-50"
-                        >
+                      alerts.data.highlights.slice(0, 4).map((alert) => {
+                        const expenseId = alert.referencia_id.startsWith('expense-due:')
+                          ? alert.referencia_id.slice('expense-due:'.length)
+                          : null
+                        const receivableId = alert.referencia_id.startsWith('due-today:')
+                          ? alert.referencia_id.slice('due-today:'.length)
+                          : null
+                        return <div key={alert.id} className="rounded-lg px-3 py-2.5 hover:bg-slate-50">
+                          <NavLink to={alert.url_destino || `/alertas/${alert.id}`} onClick={() => setHeaderPanel(null)}>
                           <p className="text-sm font-medium text-slate-800">
                             {alert.titulo}
                           </p>
                           <p className="mt-1 line-clamp-2 text-xs text-slate-500">
                             {alert.descricao}
                           </p>
-                        </NavLink>
-                      ))
+                          </NavLink>
+                          {expenseId && <div className="mt-2 flex gap-2 text-xs font-semibold"><button disabled={payExpense.isPending} onClick={() => payExpense.mutate(expenseId)} className="rounded bg-emerald-600 px-2 py-1 text-white">Pago</button><button onClick={() => setHeaderPanel(null)} className="rounded border px-2 py-1 text-slate-600">Pendente</button></div>}
+                          {receivableId && <div className="mt-2 flex gap-2 text-xs font-semibold"><button disabled={confirmReceipt.isPending} onClick={() => confirmReceipt.mutate(receivableId)} className="rounded bg-emerald-600 px-2 py-1 text-white">Sim, recebi</button><button onClick={() => setHeaderPanel(null)} className="rounded border px-2 py-1 text-slate-600">Ainda não</button></div>}
+                        </div>
+                      })
                     ) : (
                       <p className="px-3 py-8 text-center text-sm text-slate-400">
                         Nenhuma notificação no momento.
@@ -411,7 +441,7 @@ export function AppLayout() {
                     </div>
                   </dl>
                   <NavLink
-                    to="/perfil"
+                    to="/configuracoes"
                     onClick={() => setHeaderPanel(null)}
                     className="block rounded-lg bg-blue-50 px-3 py-2 text-center text-sm font-semibold text-blue-700"
                   >

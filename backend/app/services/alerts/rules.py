@@ -7,7 +7,7 @@ class ReceivableRule:
  def evaluate(self,c):
   rows=[]
   for x in c.receivables:
-   name=c.contractors.get(x.contractor_id,'Contratante')
+   name=c.recurring_incomes.get(x.recurring_income_id) or c.contractors.get(x.contractor_id,'pagamento')
    if x.remaining_balance>0 and x.expected_date<c.today and x.status!='Cancelado':rows.append(alert('Recebimento atrasado','Recebimentos',f'Recebimento de {name} está atrasado',f'Este atraso representa R$ {x.remaining_balance:,.2f} pendentes.','Alta','Cobrar contratante',f'/financeiro','Recebimento',f'overdue:{x.id}'))
    if x.remaining_balance>0 and x.expected_date==c.today:rows.append(alert('Pagamento previsto para hoje','Recebimentos',f'Pagamento de {name} previsto para hoje',f'O valor esperado é R$ {x.remaining_balance:,.2f}.','Média','Registrar recebimento',f'/financeiro','Recebimento',f'due-today:{x.id}'))
    if x.remaining_balance>0 and x.expected_date==c.today+timedelta(days=1):rows.append(alert('Pagamento vencendo amanhã','Recebimentos',f'Pagamento de {name} previsto amanhã',f'O valor esperado é R$ {x.remaining_balance:,.2f}.','Média','Acompanhar pagamento',f'/financeiro','Recebimento',f'due-tomorrow:{x.id}'))
@@ -32,7 +32,7 @@ class ShiftRule:
    if x.gross_value<=0:rows.append(alert('Plantão sem valor','Plantões','Plantão sem valor financeiro',f'O plantão de {x.date} não possui valor válido.','Alta','Atualizar valor do plantão',f'/plantoes/{x.id}/editar','Plantão',f'shift-no-value:{x.id}'))
   shift_ids={x.id for x in c.shifts}
   for x in c.receivables:
-   if x.shift_id not in shift_ids:rows.append(alert('Recebimento sem plantão','Recebimentos','Recebimento sem plantão válido',f'O recebimento de R$ {x.expected_value:,.2f} perdeu sua referência operacional.','Crítica','Revisar recebimento','/financeiro','Recebimento',f'receivable-no-shift:{x.id}'))
+   if x.shift_id and x.shift_id not in shift_ids:rows.append(alert('Recebimento sem plantão','Recebimentos','Recebimento sem plantão válido',f'O recebimento de R$ {x.expected_value:,.2f} perdeu sua referência operacional.','Crítica','Revisar recebimento','/financeiro','Recebimento',f'receivable-no-shift:{x.id}'))
   return rows
 class TaxRule:
  def evaluate(self,c):
@@ -62,7 +62,9 @@ class ExpenseRule:
   rows=[];values=[x.valor for x in c.expenses];average=sum(values,Decimal(0))/len(values) if values else Decimal(0)
   for x in c.expenses:
    if average and x.valor>average*2:rows.append(alert('Despesa acima da média','Despesas',f'Despesa elevada: {x.titulo}',f'R$ {x.valor:,.2f} representa mais que o dobro da média de R$ {average:,.2f}.','Alta','Revisar despesa',f'/despesas/{x.id}','Despesa',f'high-expense:{x.id}'))
-   if x.recorrente and x.status in ('Pendente','Atrasado') and c.today<=x.data_vencimento<=c.today+timedelta(days=3):rows.append(alert('Despesa recorrente vencendo','Despesas',f'{x.titulo} vence em breve',f'A despesa recorrente de R$ {x.valor:,.2f} vence em {(x.data_vencimento-c.today).days} dias.','Média','Preparar pagamento',f'/despesas/{x.id}','Despesa',f'recurring-due:{x.id}'))
+   if x.status in ('Pendente','Atrasado') and x.data_vencimento<=c.today+timedelta(days=3):
+    days=(x.data_vencimento-c.today).days;when='está atrasada' if days<0 else 'vence hoje' if days==0 else f'vence em {days} dias'
+    rows.append(alert('Despesa aguardando pagamento','Despesas',f'{x.titulo} {when}',f'Confirme se a despesa de R$ {x.valor:,.2f} foi paga. Ela permanecerá nas notificações até a confirmação.','Alta' if days<0 else 'Média','Marcar como pago',f'/despesas/{x.id}','Despesa',f'expense-due:{x.id}'))
   return rows
 class ContractorRule:
  def evaluate(self,c):

@@ -156,6 +156,7 @@ function DoctorDashboard() {
       <div className="grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
         <TodaySummary
           receivable={d.summary.receivable}
+          current={d.summary.current_balance}
           tax={d.summary.tax_reserve_suggested}
           net={d.summary.estimated_net}
         />

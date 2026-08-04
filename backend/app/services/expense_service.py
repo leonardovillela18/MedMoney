@@ -56,6 +56,7 @@ class ExpenseService:
   if data['status']=='Pago' and not data.get('data_pagamento'):raise HTTPException(422,'Confirme o pagamento pela aÃ§Ã£o Marcar como pago.')
   data['status']=self.effective_status(data['status'],data['data_vencimento'])
   x=Expense(user_id=user,**data);self.db.add(x);self.db.commit();self.db.refresh(x);self.sync(x)
+  if x.recorrente:self.generate_recurrence(x)
   from app.services.insights.events import refresh_insights
   refresh_insights(self.db,user)
   return x
@@ -73,6 +74,10 @@ class ExpenseService:
   if x.status=='Cancelado':raise HTTPException(422,'Uma despesa cancelada nÃ£o pode ser paga.')
   if x.status=='Pago':return x
   x.status='Pago';x.data_pagamento=payment_date or date.today();self.db.commit();self.db.refresh(x);self.sync(x)
+  if x.recorrente:
+   parent=self.db.get(Expense,x.recurrence_parent_id) if x.recurrence_parent_id else x
+   pending=self.db.scalar(select(Expense).where(Expense.user_id==user,Expense.deleted_at.is_(None),Expense.status.in_(['Pendente','Atrasado']),((Expense.id==parent.id)|(Expense.recurrence_parent_id==parent.id)))) if parent else None
+   if parent and parent.deleted_at is None and not pending:self.generate_recurrence(parent)
   from app.services.audit_service import AuditService
   AuditService.record(self.db,'EXPENSE_MARKED_PAID','Expense',user_id=user,entity_id=x.id)
   return x
