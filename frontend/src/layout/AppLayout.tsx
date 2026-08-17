@@ -93,6 +93,7 @@ export function AppLayout() {
   const { user, logout } = useAuth()
   const location = useLocation()
   const headerRef = useRef<HTMLDivElement>(null)
+  const entryReminderShown = useRef(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openGroup, setOpenGroup] = useState<GroupId | null>(() =>
     groupForPath(location.pathname)
@@ -167,6 +168,19 @@ export function AppLayout() {
     }
     localStorage.setItem('crmoney_critical_alerts', String(count))
   }, [alerts.data?.counts.Crítica])
+
+  useEffect(() => {
+    if (entryReminderShown.current || !alerts.data) return
+    const hasPaymentReminder = alerts.data.highlights.some(
+      (alert) =>
+        alert.referencia_id.startsWith('expense-due:') ||
+        alert.referencia_id.startsWith('due-today:')
+    )
+    if (hasPaymentReminder) {
+      entryReminderShown.current = true
+      setHeaderPanel('notifications')
+    }
+  }, [alerts.data])
 
   const navItem = ([path, label, Icon]: MenuItem, nested = false) => (
     <NavLink

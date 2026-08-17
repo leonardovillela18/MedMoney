@@ -32,6 +32,14 @@ def test_pj_recurring_income_creates_snapshot_tax_reserve_and_full_receivable():
 def test_deactivation_preserves_occurrence_history():
     db=session();user=uuid.uuid4();service=RecurringIncomeService(db);rule=service.create(user,payload());service.deactivate(user,rule.id)
     assert db.scalar(select(func.count()).select_from(Receivable))==1 and not rule.active
+def test_deletion_removes_open_forecast_but_preserves_rule_as_soft_deleted():
+    db=session();user=uuid.uuid4();service=RecurringIncomeService(db);rule=service.create(user,payload())
+    occurrence=db.scalar(select(Receivable));service.delete(user,rule.id)
+    db.refresh(rule);db.refresh(occurrence)
+    projection=db.scalar(select(CashflowProjection).where(CashflowProjection.origem_id==occurrence.id))
+    assert rule.deleted_at is not None and not rule.active
+    assert occurrence.deleted_at is not None and occurrence.status=='Cancelado'
+    assert projection.status=='Cancelado'
 def test_user_isolation():
     db=session();owner=uuid.uuid4();other=uuid.uuid4();rule=RecurringIncomeService(db).create(owner,payload())
     try:RecurringIncomeService(db).get(other,rule.id);assert False

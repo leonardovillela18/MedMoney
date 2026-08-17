@@ -5,6 +5,7 @@ from sqlalchemy import func,select
 from sqlalchemy.orm import Session
 from app.models.recurring_income import RecurringIncome
 from app.models.receivable import Receivable
+from app.models.tax import TaxEstimation
 from app.schemas.recurring_income import NON_PJ_TYPES
 from app.services.recurrence import first_occurrence,next_occurrence
 
@@ -40,7 +41,16 @@ class RecurringIncomeService:
     def deactivate(self,user,item_id):
         item=self.get(user,item_id);item.active=False;self.db.commit();return item
     def delete(self,user,item_id):
-        item=self.get(user,item_id);item.active=False;item.deleted_at=datetime.now(timezone.utc);self.db.commit()
+        item=self.get(user,item_id);now=datetime.now(timezone.utc);item.active=False;item.deleted_at=now
+        # Preserve received history, but remove still-open forecasts from balances.
+        open_items=list(self.db.scalars(select(Receivable).where(Receivable.user_id==user,Receivable.recurring_income_id==item.id,Receivable.deleted_at.is_(None),Receivable.received_value==0)))
+        from app.services.cashflow_service import CashflowService
+        flow=CashflowService(self.db)
+        for occurrence in open_items:
+            occurrence.status='Cancelado';occurrence.deleted_at=now
+            for tax in self.db.scalars(select(TaxEstimation).where(TaxEstimation.user_id==user,TaxEstimation.receivable_id==occurrence.id,TaxEstimation.deleted_at.is_(None))):tax.deleted_at=now
+            flow.sync_source(user,'Recebimento Recorrente',occurrence.id,occurrence.expected_date,'Receita Prevista',item.description,'Recebimentos',occurrence.expected_value,'Cancelado')
+        self.db.commit();flow.recalculate(user)
     def materialize_next(self,user,item_id):
         item=self.get(user,item_id)
         if not item.active or item.end_date and item.next_occurrence_date>item.end_date:return None
